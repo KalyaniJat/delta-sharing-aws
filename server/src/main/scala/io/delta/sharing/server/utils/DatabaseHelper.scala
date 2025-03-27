@@ -32,7 +32,7 @@ object DatabaseHelper {
   // Azure SQL Server Connection String
   private val url =
     "jdbc:sqlserver://ceer-ods.database.windows.net:1433;" +
-      "database=data-marketplace-poc;user=dbadmin;password=Ceer@123456;" +
+      "database=data-marketplace;user=dbadmin;password=Ceer@123456;" +
       "encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;" +
       "loginTimeout=30;"
 
