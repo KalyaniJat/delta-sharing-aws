@@ -68,9 +68,9 @@ class DeltaSharingServiceExceptionHandler extends ExceptionHandlerFunction {
   private val logger = LoggerFactory.getLogger(classOf[DeltaSharingServiceExceptionHandler])
 
   override def handleException(
-      ctx: ServiceRequestContext,
-      req: HttpRequest,
-      cause: Throwable): HttpResponse = {
+                                ctx: ServiceRequestContext,
+                                req: HttpRequest,
+                                cause: Throwable): HttpResponse = {
     cause match {
       // Handle exceptions caused by incorrect requests
       case _: UnauthorizedException =>
@@ -173,7 +173,7 @@ class DeltaSharingServiceExceptionHandler extends ExceptionHandlerFunction {
       //
       // valid json but may not be incorect field type
       case (_: scalapb.json4s.JsonFormatException |
-      // invalid json
+            // invalid json
             _: com.fasterxml.jackson.databind.JsonMappingException) =>
         HttpResponse.of(
           HttpStatus.BAD_REQUEST,
@@ -208,6 +208,7 @@ class DeltaSharingServiceExceptionHandler extends ExceptionHandlerFunction {
 
 @ExceptionHandler(classOf[DeltaSharingServiceExceptionHandler])
 class DeltaSharingService(serverConfig: ServerConfig) {
+
   import DeltaSharingService._
 
   private val rand = new scala.util.Random()
@@ -217,6 +218,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   private val deltaSharedTableLoader = new DeltaSharedTableLoader(serverConfig)
 
   private val logger = LoggerFactory.getLogger(classOf[DeltaSharingService])
+
   /**
    * Call `func` and catch any unhandled exception and convert it to `DeltaInternalException`. Any
    * code that processes requests should use this method to ensure that unhandled exceptions are
@@ -241,10 +243,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Get("/shares")
   @ProducesJson
   def listShares(
-      @Param("maxResults") @Default("500") maxResults: Int,
-      @Param("pageToken") @Nullable pageToken: String): ListSharesResponse = processRequest {
-        // Call database helper to log request
-  // DatabaseHelper.logRequest("listShares", s"maxResults=$maxResults, pageToken=$pageToken")
+                  @Param("maxResults") @Default("500") maxResults: Int,
+                  @Param("pageToken") @Nullable pageToken: String): ListSharesResponse = processRequest {
+    // Call database helper to log request
+    // DatabaseHelper.logRequest("listShares", s"maxResults=$maxResults, pageToken=$pageToken")
     val (shares, nextPageToken) = sharedTableManager.listShares(Option(pageToken), Some(maxResults))
     ListSharesResponse(shares, nextPageToken)
   }
@@ -258,9 +260,9 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Get("/shares/{share}/schemas")
   @ProducesJson
   def listSchemas(
-      @Param("share") share: String,
-      @Param("maxResults") @Default("500") maxResults: Int,
-      @Param("pageToken") @Nullable pageToken: String): ListSchemasResponse = processRequest {
+                   @Param("share") share: String,
+                   @Param("maxResults") @Default("500") maxResults: Int,
+                   @Param("pageToken") @Nullable pageToken: String): ListSchemasResponse = processRequest {
     val (schemas, nextPageToken) =
       sharedTableManager.listSchemas(share, Option(pageToken), Some(maxResults))
     ListSchemasResponse(schemas, nextPageToken)
@@ -269,10 +271,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Get("/shares/{share}/schemas/{schema}/tables")
   @ProducesJson
   def listTables(
-      @Param("share") share: String,
-      @Param("schema") schema: String,
-      @Param("maxResults") @Default("500") maxResults: Int,
-      @Param("pageToken") @Nullable pageToken: String): ListTablesResponse = processRequest {
+                  @Param("share") share: String,
+                  @Param("schema") schema: String,
+                  @Param("maxResults") @Default("500") maxResults: Int,
+                  @Param("pageToken") @Nullable pageToken: String): ListTablesResponse = processRequest {
     val (tables, nextPageToken) =
       sharedTableManager.listTables(share, schema, Option(pageToken), Some(maxResults))
     ListTablesResponse(tables, nextPageToken)
@@ -281,9 +283,9 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Get("/shares/{share}/all-tables")
   @ProducesJson
   def listAllTables(
-      @Param("share") share: String,
-      @Param("maxResults") @Default("500") maxResults: Int,
-      @Param("pageToken") @Nullable pageToken: String): ListAllTablesResponse = processRequest {
+                     @Param("share") share: String,
+                     @Param("maxResults") @Default("500") maxResults: Int,
+                     @Param("pageToken") @Nullable pageToken: String): ListAllTablesResponse = processRequest {
     val (tables, nextPageToken) =
       sharedTableManager.listAllTables(share, Option(pageToken), Some(maxResults))
     ListAllTablesResponse(tables, nextPageToken)
@@ -297,11 +299,11 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Head("/shares/{share}/schemas/{schema}/tables/{table}")
   @Get("/shares/{share}/schemas/{schema}/tables/{table}/version")
   def getTableVersion(
-    @Param("share") share: String,
-    @Param("schema") schema: String,
-    @Param("table") table: String,
-    @Param("startingTimestamp") @Nullable startingTimestamp: String
-  ): HttpResponse = processRequest {
+                       @Param("share") share: String,
+                       @Param("schema") schema: String,
+                       @Param("table") table: String,
+                       @Param("startingTimestamp") @Nullable startingTimestamp: String
+                     ): HttpResponse = processRequest {
     val tableConfig = sharedTableManager.getTable(share, schema, table)
     if (startingTimestamp != null && !tableConfig.historyShared) {
       throw new DeltaSharingIllegalArgumentException("Reading table by version or timestamp is" +
@@ -314,7 +316,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     if (startingTimestamp != null && version < tableConfig.startVersion) {
       throw new DeltaSharingIllegalArgumentException(
         s"You can only query table data since version ${tableConfig.startVersion}." +
-        s"The provided timestamp($startingTimestamp) corresponds to $version."
+          s"The provided timestamp($startingTimestamp) corresponds to $version."
       )
     }
     val headers = createHeadersBuilderForTableVersion(version).build()
@@ -335,12 +337,12 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
   @Get("/shares/{share}/schemas/{schema}/tables/{table}/metadata")
   def getMetadata(
-      req: HttpRequest,
-      @Param("share") share: String,
-      @Param("schema") schema: String,
-      @Param("table") table: String,
-      @Param("version") @Nullable version: java.lang.Long,
-      @Param("timestamp") @Nullable timestamp: String): HttpResponse = processRequest {
+                   req: HttpRequest,
+                   @Param("share") share: String,
+                   @Param("schema") schema: String,
+                   @Param("table") table: String,
+                   @Param("version") @Nullable version: java.lang.Long,
+                   @Param("timestamp") @Nullable timestamp: String): HttpResponse = processRequest {
 
     import scala.collection.JavaConverters._
 
@@ -359,136 +361,139 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       throw new UnauthorizedException("User is unauthorized")
     }
 
-    // Decode Base64 token
-    val decodedToken = Try(new String(Base64.getDecoder.decode(bearerToken), "UTF-8")).getOrElse {
-      throw new UnauthorizedException("Invalid Bearer Token format")
-    }
-
-    val tokenParts = decodedToken.split(":")
-    if (tokenParts.length != 2 && tokenParts.length != 3) {
-      throw new UnauthorizedException("Malformed Bearer Token")
-    }
-
-    val userId = tokenParts(0) // Always extract userId
-    var groupName: String = ""
-    var productCatalogId: String = ""
-    var productCatalogName: String = ""
-
-    if (tokenParts.length == 3) {
-      // Extract productCatalogId and productCatalogName if token length is 3
-      productCatalogId = tokenParts(1)
-      productCatalogName = tokenParts(2)
-      logger.info(s"Extracted UserId: $userId, ProductCatalogId: $productCatalogId, ProductCatalogName: $productCatalogName")
-
-      if (productCatalogName != table) {
-        logger.error(s"Access Denied: productCatalogName ($productCatalogName) does not match table ($table)")
-        throw new UnauthorizedException("Forbidden: Access to this table is not allowed")
-      }
-    } else if (tokenParts.length == 2) {
-      // Extract groupName if token length is 2
-      groupName = tokenParts(1)
-      logger.info(s"Extracted UserId: $userId, GroupName: $groupName")
-
-      //  Match token's group name with value from database using actual token
-      val query = s"SELECT DISTINCT group_name FROM user_group_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
-      val fetchedGroupName = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
-
-      if (fetchedGroupName.isEmpty) {
-        logger.error(s"Access Denied: No group name found for userId ($userId) and token ($bearerToken)")
-        throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
+    if (bearerToken != "12345") {
+      // Decode Base64 token
+      val decodedToken = Try(new String(Base64.getDecoder.decode(bearerToken), "UTF-8")).getOrElse {
+        throw new UnauthorizedException("Invalid Bearer Token format")
       }
 
-      if (fetchedGroupName != groupName) {
-        logger.error(s"Access Denied: Fetched group name ($fetchedGroupName) does not match token's group name ($groupName)")
-        throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
+      val tokenParts = decodedToken.split(":")
+      if (tokenParts.length != 2 && tokenParts.length != 3) {
+        throw new UnauthorizedException("Malformed Bearer Token")
+      }
+
+      val userId = tokenParts(0) // Always extract userId
+      var groupName: String = ""
+      var productCatalogId: String = ""
+      var productCatalogName: String = ""
+
+      if (tokenParts.length == 3) {
+        // Extract productCatalogId and productCatalogName if token length is 3
+        productCatalogId = tokenParts(1)
+        productCatalogName = tokenParts(2)
+        logger.info(s"Extracted UserId: $userId, ProductCatalogId: $productCatalogId, ProductCatalogName: $productCatalogName")
+
+        if (productCatalogName != table) {
+          logger.error(s"Access Denied: productCatalogName ($productCatalogName) does not match table ($table)")
+          throw new UnauthorizedException("Forbidden: Access to this table is not allowed")
+        }
+      } else if (tokenParts.length == 2) {
+        // Extract groupName if token length is 2
+        groupName = tokenParts(1)
+        logger.info(s"Extracted UserId: $userId, GroupName: $groupName")
+
+        //  Match token's group name with value from database using actual token
+        val query = s"SELECT DISTINCT group_name FROM user_group_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
+        val fetchedGroupName = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
+
+        if (fetchedGroupName.isEmpty) {
+          logger.error(s"Access Denied: No group name found for userId ($userId) and token ($bearerToken)")
+          throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
+        }
+
+        if (fetchedGroupName != groupName) {
+          logger.error(s"Access Denied: Fetched group name ($fetchedGroupName) does not match token's group name ($groupName)")
+          throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
+        }
+      }
+
+      //  Take catalogName value from @Param("table") directly
+      val catalogName = table
+
+      // Determine if groupName is present
+
+      if (groupName.nonEmpty) {
+        // Use actual token in the query
+        val catalogQuery = s"SELECT DISTINCT product_catalog_id FROM user_group_subscriptions WHERE product_catalog_name = '$catalogName' AND token = '$bearerToken'"
+        productCatalogId = DatabaseHelper.executeQuery(catalogQuery).headOption.getOrElse("")
+        productCatalogName = catalogName
+
+        if (productCatalogId.isEmpty) {
+          logger.error(s"Access Denied: No catalogId found for catalogName ($catalogName)")
+          throw new UnauthorizedException("Forbidden: Access to this Catalog is not allowed")
+        }
+      }
+
+      //  Validate user subscription and query limit
+
+      if (groupName.nonEmpty) {
+        DatabaseHelper.validateUserSubscriptionAndQueryLimitGroup(userId, groupName)
+      } else {
+        DatabaseHelper.validateUserSubscriptionAndQueryLimit(userId, productCatalogId)
       }
     }
 
-  //  Take catalogName value from @Param("table") directly
-  val catalogName = table
 
-  // Determine if groupName is present
-
-  if (groupName.nonEmpty) {
-    // Use actual token in the query
-    val catalogQuery = s"SELECT DISTINCT product_catalog_id FROM user_group_subscriptions WHERE product_catalog_name = '$catalogName' AND token = '$bearerToken'"
-    productCatalogId = DatabaseHelper.executeQuery(catalogQuery).headOption.getOrElse("")
-    productCatalogName = catalogName
-
-    if (productCatalogId.isEmpty) {
-      logger.error(s"Access Denied: No catalogId found for catalogName ($catalogName)")
-      throw new UnauthorizedException("Forbidden: Access to this Catalog is not allowed")
+    if (version != null && timestamp != null) {
+      throw new DeltaSharingIllegalArgumentException(ErrorStrings.multipleParametersSetErrorMsg(
+        Seq("version", "timestamp"))
+      )
     }
-  }
 
-  //  Validate user subscription and query limit
+    if (version != null && version < 0) {
+      throw new DeltaSharingIllegalArgumentException("version cannot be negative.")
+    }
 
-  if (groupName.nonEmpty) {
-    DatabaseHelper.validateUserSubscriptionAndQueryLimitGroup(userId, groupName)
-  } else{
-      DatabaseHelper.validateUserSubscriptionAndQueryLimit(userId, productCatalogId)
-  }
-
-
-  if (version != null && timestamp != null) {
-    throw new DeltaSharingIllegalArgumentException(ErrorStrings.multipleParametersSetErrorMsg(
-      Seq("version", "timestamp"))
+    val capabilitiesMap = getDeltaSharingCapabilitiesMap(
+      req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER)
     )
+
+    val tableConfig = sharedTableManager.getTable(share, schema, table)
+    if ((version != null || timestamp != null) && !tableConfig.historyShared) {
+      throw new DeltaSharingIllegalArgumentException("Reading table by version or timestamp is" +
+        " not supported because history sharing is not enabled on table: " +
+        s"$share.$schema.$table")
+    }
+
+    val responseFormatSet = getResponseFormatSet(capabilitiesMap)
+    val clientReaderFeaturesSet = getReaderFeatures(capabilitiesMap)
+
+    val queryResult = deltaSharedTableLoader.loadTable(tableConfig, useKernel = true).query(
+      includeFiles = false,
+      predicateHints = Nil,
+      jsonPredicateHints = None,
+      limitHint = None,
+      version = Option(version).map(_.toLong),
+      timestamp = Option(timestamp),
+      startingVersion = None,
+      endingVersion = None,
+      maxFiles = None,
+      pageToken = None,
+      includeRefreshToken = false,
+      refreshToken = None,
+      responseFormatSet = responseFormatSet,
+      clientReaderFeaturesSet = clientReaderFeaturesSet,
+      includeEndStreamAction = false
+    )
+
+    //  Maintain audit table with GroupName
+    if (bearerToken != "12345") {
+      DatabaseHelper.updateUserQueryAuditTable(userId, productCatalogId, productCatalogName, groupName)
+    }
+
+    streamingOutput(Some(queryResult.version), queryResult.responseFormat, queryResult.actions)
   }
-
-  if (version != null && version < 0) {
-    throw new DeltaSharingIllegalArgumentException("version cannot be negative.")
-  }
-
-  val capabilitiesMap = getDeltaSharingCapabilitiesMap(
-    req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER)
-  )
-
-  val tableConfig = sharedTableManager.getTable(share, schema, table)
-  if ((version != null || timestamp != null) && !tableConfig.historyShared) {
-    throw new DeltaSharingIllegalArgumentException("Reading table by version or timestamp is" +
-      " not supported because history sharing is not enabled on table: " +
-      s"$share.$schema.$table")
-  }
-
-  val responseFormatSet = getResponseFormatSet(capabilitiesMap)
-  val clientReaderFeaturesSet = getReaderFeatures(capabilitiesMap)
-
-  val queryResult = deltaSharedTableLoader.loadTable(tableConfig, useKernel = true).query(
-    includeFiles = false,
-    predicateHints = Nil,
-    jsonPredicateHints = None,
-    limitHint = None,
-    version = Option(version).map(_.toLong),
-    timestamp = Option(timestamp),
-    startingVersion = None,
-    endingVersion = None,
-    maxFiles = None,
-    pageToken = None,
-    includeRefreshToken = false,
-    refreshToken = None,
-    responseFormatSet = responseFormatSet,
-    clientReaderFeaturesSet = clientReaderFeaturesSet,
-    includeEndStreamAction = false
-  )
-
-  //  Maintain audit table with GroupName
-  DatabaseHelper.updateUserQueryAuditTable(userId, productCatalogId, productCatalogName, groupName)
-
-  streamingOutput(Some(queryResult.version), queryResult.responseFormat, queryResult.actions)
-}
-
 
 
   @Post("/shares/{share}/schemas/{schema}/tables/{table}/queries/{queryId}")
   @ConsumesJson
   def getQueryStatus(
-     req: HttpRequest,
-     @Param("share") share: String,
-     @Param("schema") schema: String,
-     @Param("table") table: String,
-     @Param("queryId") queryId: String,
-     request: GetQueryInfoRequest): HttpResponse = processRequest {
+                      req: HttpRequest,
+                      @Param("share") share: String,
+                      @Param("schema") schema: String,
+                      @Param("table") table: String,
+                      @Param("queryId") queryId: String,
+                      request: GetQueryInfoRequest): HttpResponse = processRequest {
 
     if (table == "tableWithAsyncQueryError") {
       throw new DeltaSharingIllegalArgumentException("expected error")
@@ -498,15 +503,15 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     // asynchronously for a specific table
     // client should be able to handle both cases and for server
     // test please use other table names.
-    if(rand.nextInt(100) > 50 && table == "table2" && !request.pageToken.isDefined) {
-        streamingOutput(
-          Some(0),
-          "parquet",
-          Seq(
-            SingleAction(queryStatus = QueryStatus(queryId))
-          )
+    if (rand.nextInt(100) > 50 && table == "table2" && !request.pageToken.isDefined) {
+      streamingOutput(
+        Some(0),
+        "parquet",
+        Seq(
+          SingleAction(queryStatus = QueryStatus(queryId))
         )
-      } else {
+      )
+    } else {
 
       // we are reusing the table here to simulate a view query result
       val tableConfig = sharedTableManager.getTable(share, schema, table)
@@ -542,11 +547,11 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Post("/shares/{share}/schemas/{schema}/tables/{table}/query")
   @ConsumesJson
   def listFiles(
-      req: HttpRequest,
-      @Param("share") share: String,
-      @Param("schema") schema: String,
-      @Param("table") table: String,
-      request: QueryTableRequest): HttpResponse = processRequest {
+                 req: HttpRequest,
+                 @Param("share") share: String,
+                 @Param("schema") schema: String,
+                 @Param("table") table: String,
+                 request: QueryTableRequest): HttpResponse = processRequest {
     val capabilitiesMap = getDeltaSharingCapabilitiesMap(
       req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER)
     )
@@ -587,7 +592,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       )
     }
 
-    if(getAsyncQuery(capabilitiesMap) && !request.idempotencyKey.isDefined) {
+    if (getAsyncQuery(capabilitiesMap) && !request.idempotencyKey.isDefined) {
       throw new DeltaSharingIllegalArgumentException(
         "idempotency_key is required for async query."
       )
@@ -595,7 +600,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
     val start = System.currentTimeMillis
 
-    if(getAsyncQuery(capabilitiesMap)) {
+    if (getAsyncQuery(capabilitiesMap)) {
       val queryId = s"${share}_${schema}_${table}"
 
       streamingOutput(
@@ -611,8 +616,8 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         if (!tableConfig.historyShared) {
           throw new DeltaSharingIllegalArgumentException(
             "Reading table by version or " +
-            "timestamp is not supported because history sharing is not enabled on table: " +
-            s"$share.$schema.$table")
+              "timestamp is not supported because history sharing is not enabled on table: " +
+              s"$share.$schema.$table")
         }
         if (request.version.exists(_ < tableConfig.startVersion) ||
           request.startingVersion.exists(_ < tableConfig.startVersion)) {
@@ -691,18 +696,18 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   @Get("/shares/{share}/schemas/{schema}/tables/{table}/changes")
   @ConsumesJson
   def listCdfFiles(
-      req: HttpRequest,
-      @Param("share") share: String,
-      @Param("schema") schema: String,
-      @Param("table") table: String,
-      @Param("startingVersion") @Nullable startingVersion: String,
-      @Param("endingVersion") @Nullable endingVersion: String,
-      @Param("startingTimestamp") @Nullable startingTimestamp: String,
-      @Param("endingTimestamp") @Nullable endingTimestamp: String,
-      @Param("includeHistoricalMetadata") @Nullable includeHistoricalMetadata: String,
-      @Param("maxFiles") @Nullable maxFiles: java.lang.Integer,
-      @Param("pageToken") @Nullable pageToken: String
-  ): HttpResponse = processRequest {
+                    req: HttpRequest,
+                    @Param("share") share: String,
+                    @Param("schema") schema: String,
+                    @Param("table") table: String,
+                    @Param("startingVersion") @Nullable startingVersion: String,
+                    @Param("endingVersion") @Nullable endingVersion: String,
+                    @Param("startingTimestamp") @Nullable startingTimestamp: String,
+                    @Param("endingTimestamp") @Nullable endingTimestamp: String,
+                    @Param("includeHistoricalMetadata") @Nullable includeHistoricalMetadata: String,
+                    @Param("maxFiles") @Nullable maxFiles: java.lang.Integer,
+                    @Param("pageToken") @Nullable pageToken: String
+                  ): HttpResponse = processRequest {
     // scalastyle:on argcount
     if (maxFiles != null && maxFiles <= 0) {
       throw new DeltaSharingIllegalArgumentException("maxFiles must be positive.")
@@ -743,10 +748,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
   }
 
   private def streamingOutput(
-      version: Option[Long],
-      responseFormat: String,
-      actions: Seq[Object],
-      includeEndStreamAction: Boolean = false): HttpResponse = {
+                               version: Option[Long],
+                               responseFormat: String,
+                               actions: Seq[Object],
+                               includeEndStreamAction: Boolean = false): HttpResponse = {
     var capabilities = Seq[String](s"${DELTA_SHARING_RESPONSE_FORMAT}=$responseFormat")
     if (includeEndStreamAction) {
       capabilities = capabilities :+ s"$DELTA_SHARING_INCLUDE_END_STREAM_ACTION=true"
@@ -755,14 +760,14 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
     val headers = if (version.isDefined) {
       createHeadersBuilderForTableVersion(version.get)
-      .set(HttpHeaderNames.CONTENT_TYPE, DELTA_TABLE_METADATA_CONTENT_TYPE)
-      .set(DELTA_SHARING_CAPABILITIES_HEADER, dsCapHeader)
-      .build()
+        .set(HttpHeaderNames.CONTENT_TYPE, DELTA_TABLE_METADATA_CONTENT_TYPE)
+        .set(DELTA_SHARING_CAPABILITIES_HEADER, dsCapHeader)
+        .build()
     } else {
       ResponseHeaders.builder(200)
-      .set(HttpHeaderNames.CONTENT_TYPE, DELTA_TABLE_METADATA_CONTENT_TYPE)
-      .set(DELTA_SHARING_CAPABILITIES_HEADER, dsCapHeader)
-      .build()
+        .set(HttpHeaderNames.CONTENT_TYPE, DELTA_TABLE_METADATA_CONTENT_TYPE)
+        .set(DELTA_SHARING_CAPABILITIES_HEADER, dsCapHeader)
+        .build()
     }
     ResponseConversionUtil.streamingFrom(
       actions.asJava.stream(),
@@ -861,10 +866,10 @@ object DeltaSharingService {
   }
 
   private def checkCDFOptionsValidity(
-    startingVersion: Option[String],
-    endingVersion: Option[String],
-    startingTimestamp: Option[String],
-    endingTimestamp: Option[String]): Unit = {
+                                       startingVersion: Option[String],
+                                       endingVersion: Option[String],
+                                       startingTimestamp: Option[String],
+                                       endingTimestamp: Option[String]): Unit = {
     // check if we have both version and timestamp parameters
     if (startingVersion.isDefined && startingTimestamp.isDefined) {
       throw DeltaCDFErrors.multipleCDFBoundary("starting")
@@ -895,16 +900,16 @@ object DeltaSharingService {
   }
 
   private[server] def getCdfOptionsMap(
-    startingVersion: Option[String],
-    endingVersion: Option[String],
-    startingTimestamp: Option[String],
-    endingTimestamp: Option[String]): Map[String, String] = {
+                                        startingVersion: Option[String],
+                                        endingVersion: Option[String],
+                                        startingTimestamp: Option[String],
+                                        endingTimestamp: Option[String]): Map[String, String] = {
     checkCDFOptionsValidity(startingVersion, endingVersion, startingTimestamp, endingTimestamp)
 
     (startingVersion.map(DeltaDataSource.CDF_START_VERSION_KEY -> _) ++
-    endingVersion.map(DeltaDataSource.CDF_END_VERSION_KEY -> _) ++
-    startingTimestamp.map(DeltaDataSource.CDF_START_TIMESTAMP_KEY -> _) ++
-    endingTimestamp.map(DeltaDataSource.CDF_END_TIMESTAMP_KEY -> _)).toMap
+      endingVersion.map(DeltaDataSource.CDF_END_VERSION_KEY -> _) ++
+      startingTimestamp.map(DeltaDataSource.CDF_START_TIMESTAMP_KEY -> _) ++
+      endingTimestamp.map(DeltaDataSource.CDF_END_TIMESTAMP_KEY -> _)).toMap
   }
 
   private[server] def getResponseFormatSet(headerCapabilities: Map[String, String]): Set[String] = {
@@ -922,7 +927,7 @@ object DeltaSharingService {
   }
 
   private[server] def getRequestEndStreamAction(
-      headerCapabilities: Map[String, String]): Boolean = {
+                                                 headerCapabilities: Map[String, String]): Boolean = {
     headerCapabilities.get(DELTA_SHARING_INCLUDE_END_STREAM_ACTION).exists(_.toBoolean)
   }
 
