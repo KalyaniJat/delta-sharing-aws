@@ -360,7 +360,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       logger.error("Unauthorized access attempt with invalid token")
       throw new UnauthorizedException("User is unauthorized")
     }
-
+    var groupName: String = ""
+    var productCatalogId: String = ""
+    var productCatalogName: String = ""
+    val userId:String=""
     if (bearerToken != "12345") {
       // Decode Base64 token
       val decodedToken = Try(new String(Base64.getDecoder.decode(bearerToken), "UTF-8")).getOrElse {
@@ -373,9 +376,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       }
 
       val userId = tokenParts(0) // Always extract userId
-      var groupName: String = ""
-      var productCatalogId: String = ""
-      var productCatalogName: String = ""
+
 
       if (tokenParts.length == 3) {
         // Extract productCatalogId and productCatalogName if token length is 3
