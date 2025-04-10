@@ -76,88 +76,88 @@ object DatabaseHelper {
     }
   }
 
-    def validateUserSubscriptionAndQueryLimit(userId: String, productCatalogId: String): Boolean = {
-      var connection: Connection = null
-      var preparedStatement: PreparedStatement = null
-      var resultSet: ResultSet = null
-      try {
-        // Establish connection
-        connection = DriverManager.getConnection(url)
+  def validateUserSubscriptionAndQueryLimit(userId: String, productCatalogId: String): Boolean = {
+    var connection: Connection = null
+    var preparedStatement: PreparedStatement = null
+    var resultSet: ResultSet = null
+    try {
+      // Establish connection
+      connection = DriverManager.getConnection(url)
 
-        // Define SQL Query
-        val query = "SELECT subscription_plan, expiration_date, subscription_pricing_detail, queries_used FROM user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
+      // Define SQL Query
+      val query = "SELECT subscription_plan, expiration_date, subscription_pricing_detail, queries_used FROM user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
 
-        // Prepare and execute statement
-        preparedStatement = connection.prepareStatement(query)
-        preparedStatement.setString(1, userId)
-        preparedStatement.setString(2, productCatalogId)
-        resultSet = preparedStatement.executeQuery()
+      // Prepare and execute statement
+      preparedStatement = connection.prepareStatement(query)
+      preparedStatement.setString(1, userId)
+      preparedStatement.setString(2, productCatalogId)
+      resultSet = preparedStatement.executeQuery()
 
-        if (resultSet.next()) {
-          // Extract values from result set
-          val subscriptionPlan = resultSet.getString("subscription_plan")
-          val expirationDateTimeStr = resultSet.getString("expiration_date")
-          val subscriptionPricingDetail = resultSet.getString("subscription_pricing_detail")
-          val queriesUsed = resultSet.getInt("queries_used")
-          if(SUBSCRIPTION_PLAN_FREE.equalsIgnoreCase(subscriptionPlan) || SUBSCRIPTION_PLAN_APPROVAL.equalsIgnoreCase(subscriptionPlan)){
+      if (resultSet.next()) {
+        // Extract values from result set
+        val subscriptionPlan = resultSet.getString("subscription_plan")
+        val expirationDateTimeStr = resultSet.getString("expiration_date")
+        val subscriptionPricingDetail = resultSet.getString("subscription_pricing_detail")
+        val queriesUsed = resultSet.getInt("queries_used")
+        if (SUBSCRIPTION_PLAN_FREE.equalsIgnoreCase(subscriptionPlan) || SUBSCRIPTION_PLAN_APPROVAL.equalsIgnoreCase(subscriptionPlan)) {
           // check only expiration date
-            if (expirationDateTimeStr != null) {
-              val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS") // Use format as per your DB
-              val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
-              val currentDateTime = LocalDateTime.now()
+          if (expirationDateTimeStr != null) {
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS") // Use format as per your DB
+            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            val currentDateTime = LocalDateTime.now()
 
-              if (expirationDateTime.isBefore(currentDateTime)) {
-                throw new SubscriptionExpiredException(s"Your $subscriptionPlan subscription expired at: $expirationDateTime")
-              }
-            }
-            return true
-          }
-
-          logger.info("detail: {}", subscriptionPricingDetail);
-
-          val objectMapper = new ObjectMapper();
-          val jsonNode: JsonNode = objectMapper.readTree(subscriptionPricingDetail)
-
-          if(SUBSCRIPTION_PLAN_PAID.equalsIgnoreCase(subscriptionPlan)){
-            val subscriptionType = jsonNode.get("type").asText();
-            // Parse expiration_date as LocalDateTime
-            logger.info("Subscription Plan: {}",subscriptionPlan);
-            logger.info("Subscription Type: {}",subscriptionType)
-
-            if(SUBSCRIPTION_TYPE_SUBSCRIPTION.equalsIgnoreCase(subscriptionType)){
-              val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS") // Adjust if necessary
-              val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
-              logger.info("expirationDateTime: {}", expirationDateTime);
-              val currentDateTime = LocalDateTime.now()
-
-              // Check if subscription has expired
-              if (expirationDateTime.isBefore(currentDateTime)) {
-                throw new SubscriptionExpiredException("Your subscription plan has expired at: "+expirationDateTime)
-              }
-
-              // Parse JSON to extract queryLimit
-              val queryLimitNode = jsonNode.get("queryLimit")
-
-              // Check if query limit is reached
-              if (queryLimitNode != null && queriesUsed >= queryLimitNode.asInt()) {
-                throw new SubscriptionExpiredException("Your query limit has been reached")
-              }
+            if (expirationDateTime.isBefore(currentDateTime)) {
+              throw new SubscriptionExpiredException(s"Your $subscriptionPlan subscription expired at: $expirationDateTime")
             }
           }
-
-
-          true // Valid subscription and within query limit
-        } else {
-          throw new Exception("Data not found")
+          return true
         }
-      }
-      finally {
-        // Close resources in reverse order
-        if (resultSet != null) resultSet.close()
-        if (preparedStatement != null) preparedStatement.close()
-        if (connection != null) connection.close()
+
+        logger.info("detail: {}", subscriptionPricingDetail);
+
+        val objectMapper = new ObjectMapper();
+        val jsonNode: JsonNode = objectMapper.readTree(subscriptionPricingDetail)
+
+        if (SUBSCRIPTION_PLAN_PAID.equalsIgnoreCase(subscriptionPlan)) {
+          val subscriptionType = jsonNode.get("type").asText();
+          // Parse expiration_date as LocalDateTime
+          logger.info("Subscription Plan: {}", subscriptionPlan);
+          logger.info("Subscription Type: {}", subscriptionType)
+
+          if (SUBSCRIPTION_TYPE_SUBSCRIPTION.equalsIgnoreCase(subscriptionType)) {
+            val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS") // Adjust if necessary
+            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            logger.info("expirationDateTime: {}", expirationDateTime);
+            val currentDateTime = LocalDateTime.now()
+
+            // Check if subscription has expired
+            if (expirationDateTime.isBefore(currentDateTime)) {
+              throw new SubscriptionExpiredException("Your subscription plan has expired at: " + expirationDateTime)
+            }
+
+            // Parse JSON to extract queryLimit
+            val queryLimitNode = jsonNode.get("queryLimit")
+
+            // Check if query limit is reached
+            if (queryLimitNode != null && queriesUsed >= queryLimitNode.asInt()) {
+              throw new SubscriptionExpiredException("Your query limit has been reached")
+            }
+          }
+        }
+
+
+        true // Valid subscription and within query limit
+      } else {
+        throw new Exception("Data not found")
       }
     }
+    finally {
+      // Close resources in reverse order
+      if (resultSet != null) resultSet.close()
+      if (preparedStatement != null) preparedStatement.close()
+      if (connection != null) connection.close()
+    }
+  }
 
   def validateUserSubscriptionAndQueryLimitGroup(userId: String, groupName: String): Boolean = {
     var connection: Connection = null
@@ -195,7 +195,7 @@ object DatabaseHelper {
         val totalCount = resultSet.getInt("totalCount")
         logger.info("detail: {}", subscriptionPricingDetail);
 
-        if(SUBSCRIPTION_PLAN_PAID.equalsIgnoreCase(subscriptionPlan)){
+        if (SUBSCRIPTION_PLAN_PAID.equalsIgnoreCase(subscriptionPlan)) {
           val objectMapper = new ObjectMapper();
           val jsonNode: JsonNode = objectMapper.readTree(subscriptionPricingDetail)
           val subscriptionType = jsonNode.get("type").asText();
@@ -212,8 +212,8 @@ object DatabaseHelper {
 
             // Parse JSON to extract queryLimit
             val queryLimitNode = jsonNode.get("queryLimit")
-            logger.info("Subscription Plan: {}",subscriptionPlan);
-            logger.info("Subscription Type: {}",subscriptionType)
+            logger.info("Subscription Plan: {}", subscriptionPlan);
+            logger.info("Subscription Type: {}", subscriptionType)
             // Check if query limit is reached
             if (queryLimitNode != null && totalCount >= queryLimitNode.asInt()) {
               throw new SubscriptionExpiredException("Your query limit has been reached")
@@ -241,7 +241,7 @@ object DatabaseHelper {
     var selectStmt: PreparedStatement = null
     var updateStmt: PreparedStatement = null
     var insertStmt: PreparedStatement = null
-//    var preparedStatement: PreparedStatement = null
+    //    var preparedStatement: PreparedStatement = null
     var resultSet: ResultSet = null
     try {
       // Establish connection
@@ -310,7 +310,7 @@ object DatabaseHelper {
     } finally {
       // Close resources in reverse order
       if (resultSet != null) resultSet.close()
-//      if (preparedStatement != null) preparedStatement.close()
+      //      if (preparedStatement != null) preparedStatement.close()
       if (insertStmt != null) insertStmt.close()
       if (updateStmt != null) updateStmt.close()
       if (selectStmt != null) selectStmt.close()

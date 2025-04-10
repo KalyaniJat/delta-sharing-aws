@@ -360,7 +360,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     var groupName: String = ""
     var productCatalogId: String = ""
     var productCatalogName: String = ""
-    val userId:String=""
+    var userId:String=""
     if (bearerToken != "12345") {
       if (!result) {
         logger.error("Unauthorized access attempt with invalid token")
@@ -376,7 +376,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         throw new UnauthorizedException("Malformed Bearer Token")
       }
 
-      val userId = tokenParts(0) // Always extract userId
+      userId = tokenParts(0) // Always extract userId
 
 
       if (tokenParts.length == 3) {
