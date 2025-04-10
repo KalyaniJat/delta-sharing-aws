@@ -361,6 +361,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     var productCatalogId: String = ""
     var productCatalogName: String = ""
     var userId:String=""
+    var subscriptionPlan:String=""
     if (bearerToken != "12345") {
       if (!result) {
         logger.error("Unauthorized access attempt with invalid token")
@@ -389,6 +390,8 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           logger.error(s"Access Denied: productCatalogName ($productCatalogName) does not match table ($table)")
           throw new UnauthorizedException("Forbidden: Access to this table is not allowed")
         }
+        val query = s"SELECT subscription_plan FROM user_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
+        subscriptionPlan = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
       } else if (tokenParts.length == 2) {
         // Extract groupName if token length is 2
         groupName = tokenParts(1)
@@ -407,6 +410,8 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           logger.error(s"Access Denied: Fetched group name ($fetchedGroupName) does not match token's group name ($groupName)")
           throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
         }
+        val query1 = s"SELECT DISTINCT subscription_plan FROM user_group_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
+        subscriptionPlan = DatabaseHelper.executeQuery(query1).headOption.getOrElse("")
       }
 
       //  Take catalogName value from @Param("table") directly
@@ -480,7 +485,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
     //  Maintain audit table with GroupName
     if (bearerToken != "12345") {
-      DatabaseHelper.updateUserQueryAuditTable(userId, productCatalogId, productCatalogName, groupName)
+      DatabaseHelper.updateUserQueryAuditTable(userId, productCatalogId, productCatalogName, groupName, subscriptionPlan)
     }
 
     streamingOutput(Some(queryResult.version), queryResult.responseFormat, queryResult.actions)

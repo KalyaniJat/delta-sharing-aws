@@ -235,7 +235,7 @@ object DatabaseHelper {
     }
   }
 
-  def updateUserQueryAuditTable(userId: String, productCatalogId: String, productCatalogName: String, groupName: String): Unit = {
+  def updateUserQueryAuditTable(userId: String, productCatalogId: String, productCatalogName: String, groupName: String, subscriptionPlan: String): Unit = {
     logger.info("Auditing started")
     var connection: Connection = null
     var selectStmt: PreparedStatement = null
@@ -289,7 +289,7 @@ object DatabaseHelper {
         if (rowsUpdated == 0) {
           throw new Exception("Failed to update queries_used: No rows affected")
         }
-        val insertQuery = "INSERT INTO user_query_audit (user_id, catalog_id, catalog_name, query_count, time_created,group_name) VALUES (?, ?, ?, ?, ?,?)"
+        val insertQuery = "INSERT INTO user_query_audit (user_id, catalog_id, catalog_name, query_count, time_created,group_name, subscription_plan) VALUES (?, ?, ?, ?, ?,?,?)"
 
         insertStmt = connection.prepareStatement(insertQuery)
         insertStmt.setString(1, userId)
@@ -298,6 +298,7 @@ object DatabaseHelper {
         insertStmt.setInt(4, updatedQueriesUsed)
         insertStmt.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()))
         insertStmt.setString(6, groupName)
+        insertStmt.setString(7, subscriptionPlan)
         insertStmt.executeUpdate();
       }
     } catch {
