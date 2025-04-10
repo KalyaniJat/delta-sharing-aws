@@ -236,61 +236,67 @@ object DatabaseHelper {
   }
 
   def updateUserQueryAuditTable(userId: String, productCatalogId: String, productCatalogName: String, groupName: String): Unit = {
+    logger.info("Auditing started")
     var connection: Connection = null
-    var preparedStatement: PreparedStatement = null
+    var selectStmt: PreparedStatement = null
+    var updateStmt: PreparedStatement = null
+    var insertStmt: PreparedStatement = null
+//    var preparedStatement: PreparedStatement = null
     var resultSet: ResultSet = null
     try {
       // Establish connection
       connection = DriverManager.getConnection(url)
 
       // Define SQL Insert Query
+      val isGroup = groupName != null && groupName.trim.nonEmpty
       val query =
-        if (groupName.nonEmpty) {
+        if (isGroup) {
           "SELECT queries_used FROM user_group_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
         } else {
           "SELECT queries_used FROM user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
         }
 
       // Prepare and execute statement
-      preparedStatement = connection.prepareStatement(query)
-      preparedStatement.setString(1, userId)
-      preparedStatement.setString(2, productCatalogId)
-      resultSet = preparedStatement.executeQuery()
+      selectStmt = connection.prepareStatement(query)
+      selectStmt.setString(1, userId)
+      selectStmt.setString(2, productCatalogId)
+      resultSet = selectStmt.executeQuery()
 
       if (resultSet.next()) {
         // Extract values from result set
         val queriesUsed = resultSet.getInt("queries_used")
         val updatedQueriesUsed = queriesUsed + 1;
+        logger.info(s"Updating queries_used to $updatedQueriesUsed for userId=$userId, catalogId=$productCatalogId")
 
         // Prepare UPDATE statement
         val updateQuery =
-          if (groupName.nonEmpty) {
+          if (isGroup) {
             "UPDATE user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           } else {
             "UPDATE user_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           }
 
-        preparedStatement = connection.prepareStatement(updateQuery)
-        preparedStatement.setInt(1, updatedQueriesUsed) // Incremented value
-        preparedStatement.setString(2, userId)
-        preparedStatement.setString(3, productCatalogId)
+        updateStmt = connection.prepareStatement(updateQuery)
+        updateStmt.setInt(1, updatedQueriesUsed) // Incremented value
+        updateStmt.setString(2, userId)
+        updateStmt.setString(3, productCatalogId)
 
         // Execute UPDATE query
-        val rowsUpdated = preparedStatement.executeUpdate()
+        val rowsUpdated = updateStmt.executeUpdate()
 
         if (rowsUpdated == 0) {
           throw new Exception("Failed to update queries_used: No rows affected")
         }
-        val query1 = "INSERT INTO user_query_audit (user_id, catalog_id, catalog_name, query_count, time_created,group_name) VALUES (?, ?, ?, ?, ?,?)"
+        val insertQuery = "INSERT INTO user_query_audit (user_id, catalog_id, catalog_name, query_count, time_created,group_name) VALUES (?, ?, ?, ?, ?,?)"
 
-        preparedStatement = connection.prepareStatement(query1)
-        preparedStatement.setString(1, userId)
-        preparedStatement.setString(2, productCatalogId)
-        preparedStatement.setString(3, productCatalogName)
-        preparedStatement.setInt(4, updatedQueriesUsed)
-        preparedStatement.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()))
-        preparedStatement.setString(6, groupName)
-        preparedStatement.executeUpdate();
+        insertStmt = connection.prepareStatement(insertQuery)
+        insertStmt.setString(1, userId)
+        insertStmt.setString(2, productCatalogId)
+        insertStmt.setString(3, productCatalogName)
+        insertStmt.setInt(4, updatedQueriesUsed)
+        insertStmt.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()))
+        insertStmt.setString(6, groupName)
+        insertStmt.executeUpdate();
       }
     } catch {
       case e: SQLException =>
@@ -302,7 +308,10 @@ object DatabaseHelper {
     } finally {
       // Close resources in reverse order
       if (resultSet != null) resultSet.close()
-      if (preparedStatement != null) preparedStatement.close()
+//      if (preparedStatement != null) preparedStatement.close()
+      if (insertStmt != null) insertStmt.close()
+      if (updateStmt != null) updateStmt.close()
+      if (selectStmt != null) selectStmt.close()
       if (connection != null) connection.close()
     }
   }
