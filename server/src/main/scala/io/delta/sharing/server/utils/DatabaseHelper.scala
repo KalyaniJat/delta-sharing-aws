@@ -257,6 +257,7 @@ object DatabaseHelper {
         }
 
       // Prepare and execute statement
+      logger.info(s"select query = $query")
       selectStmt = connection.prepareStatement(query)
       selectStmt.setString(1, userId)
       selectStmt.setString(2, productCatalogId)
