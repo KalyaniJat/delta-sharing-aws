@@ -121,7 +121,8 @@ object DatabaseHelper {
           if(SUBSCRIPTION_PLAN_PAID.equalsIgnoreCase(subscriptionPlan)){
             val subscriptionType = jsonNode.get("type").asText();
             // Parse expiration_date as LocalDateTime
-            logger.info("Subscription Plan: {}, Type: {}", subscriptionPlan, subscriptionType)
+            logger.info("Subscription Plan: {}",subscriptionPlan);
+            logger.info("Subscription Type: {}",subscriptionType)
 
             if(SUBSCRIPTION_TYPE_SUBSCRIPTION.equalsIgnoreCase(subscriptionType)){
               val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSSSS") // Adjust if necessary
@@ -211,8 +212,8 @@ object DatabaseHelper {
 
             // Parse JSON to extract queryLimit
             val queryLimitNode = jsonNode.get("queryLimit")
-            logger.info("totalCount: {}, queryLimit: {}", totalCount, queryLimitNode);
-
+            logger.info("Subscription Plan: {}",subscriptionPlan);
+            logger.info("Subscription Type: {}",subscriptionType)
             // Check if query limit is reached
             if (queryLimitNode != null && totalCount >= queryLimitNode.asInt()) {
               throw new SubscriptionExpiredException("Your query limit has been reached")
