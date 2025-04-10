@@ -245,12 +245,12 @@ object DatabaseHelper {
     var resultSet: ResultSet = null
     try {
       // Establish connection
+      logger.info(s"userId=$userId, catalogId=$productCatalogId")
       connection = DriverManager.getConnection(url)
 
       // Define SQL Insert Query
-      val isGroup = groupName != null && groupName.trim.nonEmpty
       val query =
-        if (isGroup) {
+        if (groupName.nonEmpty) {
           "SELECT queries_used FROM user_group_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
         } else {
           "SELECT queries_used FROM user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
@@ -263,6 +263,7 @@ object DatabaseHelper {
       resultSet = selectStmt.executeQuery()
 
       if (resultSet.next()) {
+        logger.info("select query executed to get queries_used value");
         // Extract values from result set
         val queriesUsed = resultSet.getInt("queries_used")
         val updatedQueriesUsed = queriesUsed + 1;
@@ -270,7 +271,7 @@ object DatabaseHelper {
 
         // Prepare UPDATE statement
         val updateQuery =
-          if (isGroup) {
+          if (groupName.nonEmpty) {
             "UPDATE user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           } else {
             "UPDATE user_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
