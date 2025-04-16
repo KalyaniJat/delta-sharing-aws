@@ -115,10 +115,10 @@ lazy val server = (project in file("server")) enablePlugins(JavaAppPackaging) se
     // Pin versions for jackson libraries as the new version of `jackson-module-scala` introduces a
     // breaking change making us not able to use `delta-standalone`.
     // CHANGED: Upgraded Jackson versions to 2.12.7.1 for compatibility
-    "com.fasterxml.jackson.core" % "jackson-core" % "2.12.7.1", // CHANGED
-    "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7.1", // CHANGED
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.7.1", // CHANGED
-    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.12.7.1", // CHANGED
+    "com.fasterxml.jackson.core" % "jackson-core" % "2.12.7", // CHANGED
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7", // CHANGED
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.12.7", // CHANGED
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.12.7", // CHANGED
     "com.microsoft.sqlserver" % "mssql-jdbc" % "12.2.0.jre11",
     "io.jsonwebtoken" % "jjwt-api" % "0.12.5",
     "io.jsonwebtoken" % "jjwt-impl" % "0.12.5",
