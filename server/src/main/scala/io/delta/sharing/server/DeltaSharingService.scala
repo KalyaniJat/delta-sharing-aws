@@ -24,10 +24,13 @@ import java.util.Base64
 import java.security.MessageDigest
 import java.util.concurrent.CompletableFuture
 import javax.annotation.Nullable
+import io.jsonwebtoken.{JwtParser, Jwts}
+import io.jsonwebtoken.security.Keys
 
+import java.util.Base64
+import javax.crypto.SecretKey
 import scala.collection.JavaConverters._
 import scala.util.Try
-
 import com.linecorp.armeria.common.{HttpData, HttpHeaderNames, HttpHeaders, HttpMethod, HttpRequest, HttpResponse, HttpStatus, MediaType, ResponseHeaders, ResponseHeadersBuilder}
 import com.linecorp.armeria.common.auth.OAuth2Token
 import com.linecorp.armeria.internal.server.ResponseConversionUtil
@@ -43,12 +46,12 @@ import net.sourceforge.argparse4j.ArgumentParsers
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import scalapb.json4s.Printer
-
 import io.delta.sharing.server.common.JsonUtils
 import io.delta.sharing.server.config.ServerConfig
 import io.delta.sharing.server.model.{QueryStatus, SingleAction}
 import io.delta.sharing.server.protocol._
 import io.delta.sharing.server.utils.DatabaseHelper
+import io.jsonwebtoken.io.Decoders
 
 // import io.delta.sharing.server.utils.DatabaseHelper
 
@@ -345,7 +348,6 @@ class DeltaSharingService(serverConfig: ServerConfig) {
                    @Param("timestamp") @Nullable timestamp: String): HttpResponse = processRequest {
 
     import scala.collection.JavaConverters._
-
     // Extract Bearer Token
     val authHeader = req.headers().get("Authorization")
     val bearerToken = Option(authHeader)
@@ -363,12 +365,25 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     var userId:String=""
     var subscriptionPlan:String=""
     if (bearerToken != "12345") {
+      // You’ll need to use the same secret used to sign JWTs in Java
+      val SECRET_KEY = "YourSecretKeyForJWTSigningWhichIsAtLeast32BytesLong" // should be base64-encoded string
+      val key: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY))
+      // Parse and validate the JWT
+      val jwtClaims = try {
+        Jwts.parser.verifyWith(key.asInstanceOf[SecretKey]).build.parseSignedClaims(bearerToken).getPayload
+      } catch {
+        case ex: Exception =>
+          logger.error("Invalid JWT Token", ex)
+          throw new UnauthorizedException("Invalid JWT token")
+      }
+      // Extract values from JWT
+      val secretToken = jwtClaims.get("secretToken", classOf[String])
       if (!result) {
         logger.error("Unauthorized access attempt with invalid token")
         throw new UnauthorizedException("User is unauthorized")
       }
       // Decode Base64 token
-      val decodedToken = Try(new String(Base64.getDecoder.decode(bearerToken), "UTF-8")).getOrElse {
+      val decodedToken = Try(new String(Base64.getDecoder.decode(secretToken), "UTF-8")).getOrElse {
         throw new UnauthorizedException("Invalid Bearer Token format")
       }
 

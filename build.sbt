@@ -55,7 +55,10 @@ lazy val client = (project in file("client")) settings(
     "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test" classifier "tests",
     "org.scalatest" %% "scalatest" % "3.2.3" % "test",
-    "org.scalatestplus" %% "mockito-4-11" % "3.2.18.0" % "test"
+    "org.scalatestplus" %% "mockito-4-11" % "3.2.18.0" % "test",
+    "io.jsonwebtoken" % "jjwt-api" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-impl" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-jackson" % "0.12.5"
   ),
   Compile / sourceGenerators += Def.task {
     val file = (Compile / sourceManaged).value / "io" / "delta" / "sharing" / "client" / "package.scala"
@@ -81,7 +84,10 @@ lazy val spark = (project in file("spark")) dependsOn(client) settings(
     "org.apache.spark" %% "spark-catalyst" % sparkVersion % "test" classifier "tests",
     "org.apache.spark" %% "spark-core" % sparkVersion % "test" classifier "tests",
     "org.apache.spark" %% "spark-sql" % sparkVersion % "test" classifier "tests",
-    "org.scalatest" %% "scalatest" % "3.2.3" % "test"
+    "org.scalatest" %% "scalatest" % "3.2.3" % "test",
+    "io.jsonwebtoken" % "jjwt-api" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-impl" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-jackson" % "0.12.5"
   ),
   Compile / sourceGenerators += Def.task {
     val file = (Compile / sourceManaged).value / "io" / "delta" / "sharing" / "spark" / "package.scala"
@@ -113,6 +119,9 @@ lazy val server = (project in file("server")) enablePlugins(JavaAppPackaging) se
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.7.1",
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.6.7",
     "com.microsoft.sqlserver" % "mssql-jdbc" % "12.2.0.jre11",
+    "io.jsonwebtoken" % "jjwt-api" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-impl" % "0.12.5",
+    "io.jsonwebtoken" % "jjwt-jackson" % "0.12.5",
 
     "org.json4s" %% "json4s-jackson" % "3.5.3" excludeAll(
       ExclusionRule("com.fasterxml.jackson.core"),
