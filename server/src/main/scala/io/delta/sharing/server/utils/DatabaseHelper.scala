@@ -168,7 +168,7 @@ object DatabaseHelper {
       connection = DriverManager.getConnection(url)
 
       // Define SQL Query
-      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from user_group_subscriptions where group_name = ? group by group_name,subscription_pricing_detail,expiration_date;"
+      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from user_group_subscriptions where group_name = ? group by subscription_plan, group_name,subscription_pricing_detail,expiration_date;"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
