@@ -390,7 +390,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           logger.error(s"Access Denied: productCatalogName ($productCatalogName) does not match table ($table)")
           throw new UnauthorizedException("Forbidden: Access to this table is not allowed")
         }
-        val query = s"SELECT subscription_plan FROM user_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
+        val query = s"SELECT subscription_plan FROM public.user_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken'"
         subscriptionPlan = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
       } else if (tokenParts.length == 2) {
         // Extract groupName if token length is 2
