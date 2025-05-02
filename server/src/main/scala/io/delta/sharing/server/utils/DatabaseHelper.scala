@@ -52,9 +52,9 @@ object DatabaseHelper {
       connection = DriverManager.getConnection(url)
 
       // Define SQL Insert Query
-      // val query = "select user_id from user_subscriptions where token = ?"
+      // val query = "select user_id from dep_metadata_user_subscription where token = ?"
 
-      val query = "SELECT user_id FROM public.user_subscriptions WHERE token = ? "
+      val query = "SELECT user_id FROM public.dep_metadata_user_subscription WHERE token = ? "
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
@@ -83,7 +83,7 @@ object DatabaseHelper {
       connection = DriverManager.getConnection(url)
 
       // Define SQL Query
-      val query = "SELECT subscription_plan, expiration_date, subscription_pricing_detail, queries_used FROM public.user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
+      val query = "SELECT subscription_plan, expiration_date, subscription_pricing_detail, queries_used FROM public.dep_metadata_user_subscription WHERE user_id = ? AND product_catalog_id = ?"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
@@ -257,7 +257,7 @@ object DatabaseHelper {
         if (groupName.nonEmpty) {
           "SELECT queries_used FROM user_group_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
         } else {
-          "SELECT queries_used FROM public.user_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
+          "SELECT queries_used FROM public.dep_metadata_user_subscription WHERE user_id = ? AND product_catalog_id = ?"
         }
 
       // Prepare and execute statement
@@ -279,7 +279,7 @@ object DatabaseHelper {
           if (groupName.nonEmpty) {
             "UPDATE user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           } else {
-            "UPDATE public.user_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
+            "UPDATE public.dep_metadata_user_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           }
 
         updateStmt = connection.prepareStatement(updateQuery)
