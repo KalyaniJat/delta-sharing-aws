@@ -53,7 +53,7 @@ object DatabaseHelper {
       // Define SQL Insert Query
       // val query = "select user_id from user_subscriptions where token = ?"
 
-      val query = "SELECT user_id FROM user_subscriptions WHERE token = ? UNION SELECT user_id FROM user_group_subscriptions WHERE token = ?"
+      val query = "SELECT user_id FROM user_subscriptions WHERE token = ? "
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
