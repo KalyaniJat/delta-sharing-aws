@@ -39,10 +39,8 @@ object DatabaseHelper {
 
   // Azure SQL Server Connection String
   private val url =
-    "jdbc:sqlserver://ceer-ods.database.windows.net:1433;" +
-      "database=data-marketplace;user=dbadmin;password=Ceer@123456;" +
-      "encrypt=true;trustServerCertificate=false;hostNameInCertificate=*.database.windows.net;" +
-      "loginTimeout=30;"
+    "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=true&sslmode=require"
+
 
   def checkTokenPresentInDb(token: String): Boolean = {
     var connection: Connection = null
