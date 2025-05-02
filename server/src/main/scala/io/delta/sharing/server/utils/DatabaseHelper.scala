@@ -101,7 +101,10 @@ object DatabaseHelper {
           // check only expiration date
           if (expirationDateTimeStr != null) {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // Use format as per your DB
-            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            // val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+
+            val expirationDateTime = resultSet.getTimestamp("expiration_date").toLocalDateTime
+
             val currentDateTime = LocalDateTime.now()
 
             if (expirationDateTime.isBefore(currentDateTime)) {
@@ -124,7 +127,8 @@ object DatabaseHelper {
 
           if (SUBSCRIPTION_TYPE_SUBSCRIPTION.equalsIgnoreCase(subscriptionType)) {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // Adjust if necessary
-            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            // val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            val expirationDateTime = resultSet.getTimestamp("expiration_date").toLocalDateTime
             logger.info("expirationDateTime: {}", expirationDateTime);
             val currentDateTime = LocalDateTime.now()
 
@@ -180,7 +184,8 @@ object DatabaseHelper {
         if (SUBSCRIPTION_PLAN_FREE.equalsIgnoreCase(subscriptionPlan) || SUBSCRIPTION_PLAN_APPROVAL.equalsIgnoreCase(subscriptionPlan)) {
           if (expirationDateTimeStr != null) {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // Use format as per your DB
-            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            // val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            val expirationDateTime = resultSet.getTimestamp("expiration_date").toLocalDateTime
             val currentDateTime = LocalDateTime.now()
 
             if (expirationDateTime.isBefore(currentDateTime)) {
@@ -199,7 +204,8 @@ object DatabaseHelper {
           val subscriptionType = jsonNode.get("type").asText();
           if (SUBSCRIPTION_TYPE_SUBSCRIPTION.equalsIgnoreCase(subscriptionType)) {
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss") // Adjust if necessary
-            val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            // val expirationDateTime = LocalDateTime.parse(expirationDateTimeStr, formatter)
+            val expirationDateTime = resultSet.getTimestamp("expiration_date").toLocalDateTime
             logger.info("expirationDateTime: {}", expirationDateTime);
             val currentDateTime = LocalDateTime.now()
 
