@@ -40,7 +40,7 @@ object DatabaseHelper {
   // Azure SQL Server Connection String
 
   private val url =
-  "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres" +
+  "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres_dev" +
     "?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=false"
 
   def checkTokenPresentInDb(token: String): Boolean = {
