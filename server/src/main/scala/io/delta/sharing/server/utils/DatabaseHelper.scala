@@ -41,7 +41,7 @@ object DatabaseHelper {
 
   private val url =
   "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres" +
-    "?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=true"
+    "?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=false"
 
   def checkTokenPresentInDb(token: String): Boolean = {
     var connection: Connection = null
