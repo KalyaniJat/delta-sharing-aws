@@ -38,9 +38,10 @@ object DatabaseHelper {
   private val SUBSCRIPTION_TYPE_PAY_PER_QUERY: String = "pay-per-query"
 
   // Azure SQL Server Connection String
-  private val url =
-    "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=true&sslmode=require"
 
+  private val url =
+  "jdbc:postgresql://dep-database-us-east-1.c8xgxyogjacf.us-east-1.rds.amazonaws.com:5432/dep_postgres" +
+    "?user=postgres&password=SuOYMwYRBYNPzK1y1fqn&ssl=true"
 
   def checkTokenPresentInDb(token: String): Boolean = {
     var connection: Connection = null
