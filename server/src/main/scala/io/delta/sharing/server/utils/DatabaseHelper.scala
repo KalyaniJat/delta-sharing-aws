@@ -59,7 +59,6 @@ object DatabaseHelper {
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
       preparedStatement.setString(1, token)
-      preparedStatement.setString(2, token)
       resultSet = preparedStatement.executeQuery();
 
       return resultSet.next()
