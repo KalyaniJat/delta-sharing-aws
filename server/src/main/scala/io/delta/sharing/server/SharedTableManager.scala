@@ -78,7 +78,8 @@ class SharedTableManager(serverConfig: ServerConfig) {
         }
       } else {
         // scalastyle:off println
-        println(s"WARNING: Share or Schema not found in YAML for share=$shareName, schema=$schemaName")
+        println(s"WARNING: Share=$shareName")
+        println(s"WARNING: Schema=$schemaName")
         println("WARNING: Skipping tables from DB because share/schema not matched")
         // scalastyle:on println
       }
