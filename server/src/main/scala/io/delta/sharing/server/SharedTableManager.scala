@@ -38,17 +38,37 @@ class SharedTableManager(serverConfig: ServerConfig) {
   }
 
   private val shares = {
-    serverConfig.getShares.asScala.foreach { share =>
-      share.getSchemas.asScala.foreach { schema =>
-        schema.getTables.asScala.foreach { table =>
-          val key = s"${share.getName}|${schema.getName}|${table.getName}"
-          tableOverridesFromDb.get(key).foreach { overriddenPath =>
-            table.setLocation(overriddenPath)
-          }
+    val existingShares = serverConfig.getShares.asScala.toBuffer
+    val shareMap = existingShares.map(s => s.getName -> s).toMap
+
+    val tableOverrides = DatabaseHelper.fetchTableOverridesFromSubscription()
+
+    // Group tables by share and schema from DB
+    val groupedTables = tableOverrides.groupBy { case (key, _) =>
+      val Array(shareName, schemaName, _) = key.split('|')
+      (shareName, schemaName)
+    }
+
+    groupedTables.foreach { case ((shareName, schemaName), tables) =>
+      val shareConfigOpt = shareMap.get(shareName)
+      val schemaConfigOpt = shareConfigOpt.flatMap(share =>
+        share.getSchemas.asScala.find(_.getName.equalsIgnoreCase(schemaName))
+      )
+
+      if (shareConfigOpt.isDefined && schemaConfigOpt.isDefined) {
+        val schemaConfig = schemaConfigOpt.get
+
+        tables.foreach { case (key, path) =>
+          val tableName = key.split('|')(2)
+          val tableConfig = new TableConfig()
+          tableConfig.setName(tableName)
+          tableConfig.setLocation(path)
+          schemaConfig.getTables.add(tableConfig)
         }
       }
     }
-    serverConfig.getShares
+
+    existingShares.asJava
   }
 
   private val defaultMaxResults = 500
