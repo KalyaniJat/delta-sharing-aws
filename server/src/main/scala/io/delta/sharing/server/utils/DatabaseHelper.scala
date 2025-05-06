@@ -357,7 +357,7 @@ object DatabaseHelper {
 
     result
   }
-}
+
 
   def fetchTableOverridesFromSubscription(): Seq[(String, String)] = {
     // Returns (tableName, path)
@@ -386,4 +386,5 @@ object DatabaseHelper {
 
     overrides.toSeq
   }
+}
 
