@@ -359,3 +359,31 @@ object DatabaseHelper {
   }
 }
 
+def fetchTableOverridesFromSubscription(): Seq[(String, String)] = {
+  // Returns (tableName, path)
+  var connection: Connection = null
+  var statement: PreparedStatement = null
+  var resultSet: ResultSet = null
+  val overrides = scala.collection.mutable.ListBuffer[(String, String)]()
+
+  try {
+    connection = DriverManager.getConnection(url)
+    val query = "SELECT DISTINCT product_catalog_name, path FROM public.dep_metadata_user_subscription"
+    statement = connection.prepareStatement(query)
+    resultSet = statement.executeQuery()
+
+    while (resultSet.next()) {
+      val tableName = resultSet.getString("product_catalog_name")
+      val path = resultSet.getString("path")
+      if (tableName != null && path != null)
+        overrides += ((tableName, path))
+    }
+  } finally {
+    if (resultSet != null) resultSet.close()
+    if (statement != null) statement.close()
+    if (connection != null) connection.close()
+  }
+
+  overrides.toSeq
+}
+

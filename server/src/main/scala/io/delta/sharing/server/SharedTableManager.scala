@@ -1,19 +1,3 @@
-/*
- * Copyright (2021) The Delta Lake Project Authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package io.delta.sharing.server
 
 import java.io.IOException
@@ -24,22 +8,37 @@ import scala.collection.JavaConverters._
 
 import io.delta.sharing.server.config.{SchemaConfig, ServerConfig, ShareConfig, TableConfig}
 import io.delta.sharing.server.protocol.{PageToken, Schema, Share, Table}
+import io.delta.sharing.server.utils.DatabaseHelper
 
-/**
- * Load the shared tables from `ServerConfig` and provide the pagination APIs to query
- * shares/schemas/tables.
- */
 class SharedTableManager(serverConfig: ServerConfig) {
 
   private val caseInsensitiveComparer = (a: String, b: String) => a.equalsIgnoreCase(b)
 
-  private val shares = serverConfig.getShares
+  // Get table name → location overrides from PostgreSQL
+  private val tableOverridesFromDb: Map[String, String] = {
+    DatabaseHelper.fetchTableOverridesFromSubscription().toMap
+  }
+
+  // Keep share/schema from YAML, override table paths if name matches
+  private val shares = {
+    serverConfig.getShares.asScala.foreach { share =>
+      share.getSchemas.asScala.foreach { schema =>
+        schema.getTables.asScala.foreach { table =>
+          val tableName = table.getName
+          tableOverridesFromDb.get(tableName).foreach { overriddenPath =>
+            table.setLocation(overriddenPath)
+          }
+        }
+      }
+    }
+    serverConfig.getShares
+  }
 
   private val defaultMaxResults = 500
 
   private def encodePageToken(id: String, share: Option[String], schema: Option[String]): String = {
     val binary = PageToken(id = Option(id), share = share, schema = schema).toByteArray
-    new String(Base64.getUrlEncoder().encode(binary), UTF_8)
+    new String(Base64.getUrlEncoder.encode(binary), UTF_8)
   }
 
   private def decodePageToken(
@@ -48,16 +47,13 @@ class SharedTableManager(serverConfig: ServerConfig) {
       expectedSchema: Option[String]): String = {
     val pageToken =
       try {
-        val binary = Base64.getUrlDecoder().decode(pageTokenString.getBytes(UTF_8))
+        val binary = Base64.getUrlDecoder.decode(pageTokenString.getBytes(UTF_8))
         PageToken.parseFrom(binary)
       } catch {
         case _: IllegalArgumentException | _: IOException =>
           throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
       }
-    if (pageToken.id.isEmpty
-      || pageToken.share != expectedShare
-      || pageToken.schema != expectedSchema
-    ) {
+    if (pageToken.id.isEmpty || pageToken.share != expectedShare || pageToken.schema != expectedSchema) {
       throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
     }
     pageToken.getId
@@ -70,9 +66,7 @@ class SharedTableManager(serverConfig: ServerConfig) {
       maxResults: Option[Int],
       totalSize: Int)(func: (Int, Int) => Seq[T]): (Seq[T], Option[String]) = {
     assertMaxResults(maxResults)
-    val start = nextPageToken.map {
-      pageToken => decodePageToken(pageToken, share, schema).toInt
-    }.getOrElse(0)
+    val start = nextPageToken.map(decodePageToken(_, share, schema).toInt).getOrElse(0)
     if (start > totalSize) {
       throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
     }
@@ -86,8 +80,8 @@ class SharedTableManager(serverConfig: ServerConfig) {
     maxResults.foreach { m =>
       if (m < 0 || m > defaultMaxResults) {
         throw new DeltaSharingIllegalArgumentException(
-          s"Acceptable values of 'maxResults' are 0 to $defaultMaxResults, inclusive. " +
-            s"(Default: $defaultMaxResults)")
+          s"Acceptable values of 'maxResults' are 0 to $defaultMaxResults, inclusive. (Default: $defaultMaxResults)"
+        )
       }
     }
   }
@@ -108,7 +102,7 @@ class SharedTableManager(serverConfig: ServerConfig) {
     getPage(nextPageToken, None, None, maxResults, shares.size) { (start, end) =>
       shares.asScala.toSeq.map { share =>
         Share().withName(share.getName)
-      }.slice(start, end).seq
+      }.slice(start, end)
     }
   }
 
@@ -155,18 +149,17 @@ class SharedTableManager(serverConfig: ServerConfig) {
       nextPageToken: Option[String] = None,
       maxResults: Option[Int] = None): (Seq[Table], Option[String]) = {
     val shareConfig = getShareInternal(share)
-    val totalSize = shareConfig.schemas.asScala.map(_.tables.size).sum
+    val totalSize = shareConfig.getSchemas.asScala.map(_.getTables.size).sum
     getPage(nextPageToken, Some(share), None, maxResults, totalSize) {
       (start, end) =>
-        shareConfig.schemas.asScala.toSeq.flatMap { schema =>
-          schema.tables.asScala.toSeq.map {
-            table =>
-              Table(
-                name = Some(table.getName),
-                schema = Some(schema.name),
-                share = Some(share),
-                id = if (table.id.isEmpty) None else Some(table.id)
-              )
+        shareConfig.getSchemas.asScala.toSeq.flatMap { schema =>
+          schema.getTables.asScala.toSeq.map { table =>
+            Table(
+              name = Some(table.getName),
+              schema = Some(schema.getName),
+              share = Some(share),
+              id = if (table.id.isEmpty) None else Some(table.id)
+            )
           }
         }.slice(start, end)
     }
@@ -179,12 +172,10 @@ class SharedTableManager(serverConfig: ServerConfig) {
       } catch {
         case _: DeltaSharingNoSuchElementException =>
           throw new DeltaSharingNoSuchElementException(
-            s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
-              s"please contact your share provider for further information.")
+            s"[Share/Schema/Table] '$share/$schema/$table' does not exist, please contact your share provider.")
       }
     schemaConfig.getTables.asScala.find(t => caseInsensitiveComparer(t.getName, table))
       .getOrElse(throw new DeltaSharingNoSuchElementException(
-        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
-          s"please contact your share provider for further information."))
+        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, please contact your share provider."))
   }
 }
