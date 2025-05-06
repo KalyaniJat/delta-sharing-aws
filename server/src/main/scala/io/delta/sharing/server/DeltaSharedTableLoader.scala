@@ -34,7 +34,7 @@ class DeltaSharedTableLoader(serverConfig: ServerConfig) extends Logging {
       .build[String, DeltaSharedTable]()
   }
 
-  // ✅ Fetch dynamic config from PostgreSQL
+  // Fetch dynamic config from PostgreSQL
   private def getTableConfigFromDb(table: Table): TableConfig = {
     val query =
       s"""
@@ -58,13 +58,13 @@ class DeltaSharedTableLoader(serverConfig: ServerConfig) extends Logging {
     )
   }
 
-  // ✅ New method: use table object, not YAML
+  // New method: use table object, not YAML
   def loadTable(table: Table, useKernel: Boolean = false): DeltaSharedTableProtocol = {
     val tableConfig = getTableConfigFromDb(table)
     loadTable(tableConfig, useKernel)
   }
 
-  // ✅ Existing fallback method
+  // Existing fallback method
   def loadTable(tableConfig: TableConfig, useKernel: Boolean): DeltaSharedTableProtocol = {
     if (useKernel) {
       return new DeltaSharedTableKernel(

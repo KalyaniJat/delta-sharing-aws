@@ -435,8 +435,8 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
 
     if (version != null && timestamp != null) {
-      throw new DeltaSharingIllegalArgumentException(ErrorStrings.multipleParametersSetErrorMsg(
-        Seq("version", "timestamp"))
+      throw new DeltaSharingIllegalArgumentException(
+        ErrorStrings.multipleParametersSetErrorMsg(Seq("version", "timestamp"))
       )
     }
 
@@ -558,8 +558,8 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     val numVersionParams =
       Seq(request.version, request.timestamp, request.startingVersion).count(_.isDefined)
     if (numVersionParams > 1) {
-      throw new DeltaSharingIllegalArgumentException(ErrorStrings.multipleParametersSetErrorMsg(
-        Seq("version", "timestamp", "startingVersion"))
+      throw new DeltaSharingIllegalArgumentException(
+        ErrorStrings.multipleParametersSetErrorMsg(Seq("version", "timestamp"))
       )
     }
     if (request.version.isDefined && request.version.get < 0) {
