@@ -304,14 +304,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
                        @Param("table") table: String,
                        @Param("startingTimestamp") @Nullable startingTimestamp: String
                      ): HttpResponse = processRequest {
-    val tableConfig = sharedTableManager.getTable(share, schema, table)
-    if (startingTimestamp != null && !tableConfig.historyShared) {
-      throw new DeltaSharingIllegalArgumentException("Reading table by version or timestamp is" +
-        " not supported because history sharing is not enabled on table: " +
-        s"$share.$schema.$table")
-    }
-    val version = deltaSharedTableLoader.loadTable(tableConfig, useKernel = true).getTableVersion(
-      Option(startingTimestamp)
+    val version = deltaSharedTableLoader.loadTable(Table(share, schema, table), useKernel = true).getTableVersion(Option(startingTimestamp))
     )
     if (startingTimestamp != null && version < tableConfig.startVersion) {
       throw new DeltaSharingIllegalArgumentException(
@@ -455,7 +448,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER)
     )
 
-    val tableConfig = sharedTableManager.getTable(share, schema, table)
+    // // // val tableConfig = sharedTableManager.getTable(share, schema, table)
     if ((version != null || timestamp != null) && !tableConfig.historyShared) {
       throw new DeltaSharingIllegalArgumentException("Reading table by version or timestamp is" +
         " not supported because history sharing is not enabled on table: " +
@@ -465,7 +458,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     val responseFormatSet = getResponseFormatSet(capabilitiesMap)
     val clientReaderFeaturesSet = getReaderFeatures(capabilitiesMap)
 
-    val queryResult = deltaSharedTableLoader.loadTable(tableConfig, useKernel = true).query(
+    val queryResult = deltaSharedTableLoader.loadTable(Table(share, schema, table), useKernel = true).query(
       includeFiles = false,
       predicateHints = Nil,
       jsonPredicateHints = None,
@@ -521,11 +514,11 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     } else {
 
       // we are reusing the table here to simulate a view query result
-      val tableConfig = sharedTableManager.getTable(share, schema, table)
+      // // // val tableConfig = sharedTableManager.getTable(share, schema, table)
       val capabilitiesMap = getDeltaSharingCapabilitiesMap(
         req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER))
       val responseFormatSet = getResponseFormatSet(capabilitiesMap)
-      val queryResult = deltaSharedTableLoader.loadTable(tableConfig).query(
+      val queryResult = deltaSharedTableLoader.loadTable(Table(share, schema, table)).query(
         includeFiles = true,
         Seq.empty[String],
         None,
@@ -618,7 +611,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         )
       )
     } else {
-      val tableConfig = sharedTableManager.getTable(share, schema, table)
+      // // // val tableConfig = sharedTableManager.getTable(share, schema, table)
       if (numVersionParams > 0) {
         if (!tableConfig.historyShared) {
           throw new DeltaSharingIllegalArgumentException(
@@ -648,7 +641,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           && request.maxFiles.isEmpty
           && request.startingVersion.isEmpty
           && request.pageToken.isEmpty) {
-        deltaSharedTableLoader.loadTable(tableConfig, useKernel = true).query(
+        deltaSharedTableLoader.loadTable(Table(share, schema, table), useKernel = true).query(
           includeFiles = true,
           request.predicateHints,
           request.jsonPredicateHints,
@@ -665,7 +658,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           clientReaderFeaturesSet = clientReaderFeaturesSet,
           includeEndStreamAction = includeEndStreamAction)
       } else {
-        deltaSharedTableLoader.loadTable(tableConfig, useKernel = false).query(
+        deltaSharedTableLoader.loadTable(Table(share, schema, table), useKernel = false).query(
           includeFiles = true,
           request.predicateHints,
           request.jsonPredicateHints,
@@ -723,7 +716,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       req.headers().get(DELTA_SHARING_CAPABILITIES_HEADER)
     )
     val start = System.currentTimeMillis
-    val tableConfig = sharedTableManager.getTable(share, schema, table)
+    // // // val tableConfig = sharedTableManager.getTable(share, schema, table)
     if (!tableConfig.historyShared) {
       throw new DeltaSharingIllegalArgumentException("cdf is not enabled on table " +
         s"$share.$schema.$table")
@@ -731,7 +724,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
     val responseFormatSet = getResponseFormatSet(capabilitiesMap)
     val includeEndStreamAction = getRequestEndStreamAction(capabilitiesMap)
-    val queryResult = deltaSharedTableLoader.loadTable(tableConfig).queryCDF(
+    val queryResult = deltaSharedTableLoader.loadTable(Table(share, schema, table)).queryCDF(
       getCdfOptionsMap(
         Option(startingVersion),
         Option(endingVersion),

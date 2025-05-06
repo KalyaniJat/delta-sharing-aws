@@ -20,16 +20,13 @@ import java.util.concurrent.TimeUnit
 
 import com.google.common.cache.CacheBuilder
 import io.delta.standalone.internal.DeltaSharedTable
-
 import io.delta.sharing.kernel.internal.DeltaSharedTableKernel
 import io.delta.sharing.server.config.{ServerConfig, TableConfig}
+import io.delta.sharing.server.model.Table
+import io.delta.sharing.server.util.Logging
 
+class DeltaSharedTableLoader(serverConfig: ServerConfig) extends Logging {
 
-/**
- * A class to load Delta tables from `TableConfig`. It also caches the loaded tables internally
- * to speed up the loading.
- */
-class DeltaSharedTableLoader(serverConfig: ServerConfig) {
   private val deltaSharedTableCache = {
     CacheBuilder.newBuilder()
       .expireAfterAccess(60, TimeUnit.MINUTES)
@@ -37,7 +34,38 @@ class DeltaSharedTableLoader(serverConfig: ServerConfig) {
       .build[String, DeltaSharedTable]()
   }
 
-  def loadTable(tableConfig: TableConfig, useKernel: Boolean = false): DeltaSharedTableProtocol = {
+  // ✅ Fetch dynamic config from PostgreSQL
+  private def getTableConfigFromDb(table: Table): TableConfig = {
+    val query =
+      s"""
+         |SELECT path FROM public.dep_metadata_user_subscription
+         |WHERE schema_name = '${table.schema}'
+         |AND share_name = '${table.share}'
+         |AND product_catalog_name = '${table.name}'
+         |""".stripMargin
+
+    val results = DatabaseHelper.executeQuery(query)
+    if (results.isEmpty) {
+      throw new Exception(s"Table not found in DB: ${table.share}.${table.schema}.${table.name}")
+    }
+
+    TableConfig(
+      id = s"${table.share}.${table.schema}.${table.name}",
+      name = table.name,
+      schema = table.schema,
+      share = table.share,
+      location = results.head
+    )
+  }
+
+  // ✅ New method: use table object, not YAML
+  def loadTable(table: Table, useKernel: Boolean = false): DeltaSharedTableProtocol = {
+    val tableConfig = getTableConfigFromDb(table)
+    loadTable(tableConfig, useKernel)
+  }
+
+  // ✅ Existing fallback method
+  def loadTable(tableConfig: TableConfig, useKernel: Boolean): DeltaSharedTableProtocol = {
     if (useKernel) {
       return new DeltaSharedTableKernel(
         tableConfig,
@@ -50,23 +78,23 @@ class DeltaSharedTableLoader(serverConfig: ServerConfig) {
         serverConfig.refreshTokenTtlMs
       )
     }
+
     try {
-      val deltaSharedTable =
-        deltaSharedTableCache.get(
-          tableConfig.location,
-          () => {
-            new DeltaSharedTable(
-              tableConfig,
-              serverConfig.preSignedUrlTimeoutSeconds,
-              serverConfig.evaluatePredicateHints,
-              serverConfig.evaluateJsonPredicateHints,
-              serverConfig.evaluateJsonPredicateHintsV2,
-              serverConfig.queryTablePageSizeLimit,
-              serverConfig.queryTablePageTokenTtlMs,
-              serverConfig.refreshTokenTtlMs
-            )
-          }
-        )
+      val deltaSharedTable = deltaSharedTableCache.get(
+        tableConfig.location,
+        () => {
+          new DeltaSharedTable(
+            tableConfig,
+            serverConfig.preSignedUrlTimeoutSeconds,
+            serverConfig.evaluatePredicateHints,
+            serverConfig.evaluateJsonPredicateHints,
+            serverConfig.evaluateJsonPredicateHintsV2,
+            serverConfig.queryTablePageSizeLimit,
+            serverConfig.queryTablePageTokenTtlMs,
+            serverConfig.refreshTokenTtlMs
+          )
+        }
+      )
       if (!serverConfig.stalenessAcceptable) {
         deltaSharedTable.update()
       }
