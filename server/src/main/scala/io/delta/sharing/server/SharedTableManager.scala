@@ -42,16 +42,20 @@ class SharedTableManager(serverConfig: ServerConfig) {
     val shareMap = existingShares.map(s => s.getName -> s).toMap
 
     val tableOverrides = DatabaseHelper.fetchTableOverridesFromSubscription()
-    println(s"DEBUG: Loaded ${tableOverrides.size} table overrides from PostgreSQL")
 
-    // Group tables by (share, schema)
+    // scalastyle:off println
+    println(s"DEBUG: Loaded ${tableOverrides.size} table overrides from PostgreSQL")
+    // scalastyle:on println
+
     val groupedTables = tableOverrides.groupBy { case (key, _) =>
       val Array(shareName, schemaName, _) = key.split('|')
       (shareName, schemaName)
     }
 
     groupedTables.foreach { case ((shareName, schemaName), tables) =>
+      // scalastyle:off println
       println(s"DEBUG: Processing share=$shareName, schema=$schemaName")
+      // scalastyle:on println
 
       val shareConfigOpt = shareMap.get(shareName)
       val schemaConfigOpt = shareConfigOpt.flatMap(share =>
@@ -63,7 +67,9 @@ class SharedTableManager(serverConfig: ServerConfig) {
 
         tables.foreach { case (key, path) =>
           val tableName = key.split('|')(2)
+          // scalastyle:off println
           println(s"DEBUG: Injecting table from DB: $tableName with path: $path")
+          // scalastyle:on println
 
           val tableConfig = new TableConfig()
           tableConfig.setName(tableName)
@@ -71,12 +77,15 @@ class SharedTableManager(serverConfig: ServerConfig) {
           schemaConfig.getTables.add(tableConfig)
         }
       } else {
+        // scalastyle:off println
         println(s"WARNING: Share or Schema not found in YAML for share=$shareName, schema=$schemaName — skipping tables")
+        // scalastyle:on println
       }
     }
 
     existingShares.asJava
   }
+
 
 
   private val defaultMaxResults = 500
