@@ -16,8 +16,6 @@
  * under the License.
  */
 // scalastyle:on headerMatch
-
-
 package io.delta.sharing.server
 
 import java.io.IOException
