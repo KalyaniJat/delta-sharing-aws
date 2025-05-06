@@ -366,7 +366,7 @@ object DatabaseHelper {
         |FROM dep_metadata_user_subscription
       """.stripMargin
 
-    val conn = getConnection(url) // ensure this opens your PostgreSQL connection
+    val conn = DriverManager.getConnection(url)
     val stmt = conn.prepareStatement(query)
     val rs = stmt.executeQuery()
     val results = scala.collection.mutable.ArrayBuffer.empty[(String, String)]
