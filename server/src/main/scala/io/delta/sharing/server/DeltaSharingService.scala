@@ -305,7 +305,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
                        @Param("startingTimestamp") @Nullable startingTimestamp: String
                      ): HttpResponse = processRequest {
     val version = deltaSharedTableLoader.loadTable(Table(share, schema, table), useKernel = true).getTableVersion(Option(startingTimestamp))
-    )
+
     if (startingTimestamp != null && version < tableConfig.startVersion) {
       throw new DeltaSharingIllegalArgumentException(
         s"You can only query table data since version ${tableConfig.startVersion}." +
