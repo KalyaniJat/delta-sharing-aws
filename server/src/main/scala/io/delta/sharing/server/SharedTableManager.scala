@@ -1,4 +1,4 @@
-// scalastyle:on headerCheck
+// scalastyle:off headerCheck
 /*
  * Copyright (2021) The Delta Lake Project Authors.
  *
@@ -15,7 +15,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-// scalastyle:on headerMatch
+// scalastyle:on headerCheck
+
 package io.delta.sharing.server
 
 import java.io.IOException
@@ -30,8 +31,7 @@ import io.delta.sharing.server.utils.DatabaseHelper
 
 class SharedTableManager(serverConfig: ServerConfig) {
 
-  private val caseInsensitiveComparer =
-    (a: String, b: String) => a.equalsIgnoreCase(b)
+  private val caseInsensitiveComparer = (a: String, b: String) => a.equalsIgnoreCase(b)
 
   private val tableOverridesFromDb: Map[String, String] = {
     DatabaseHelper.fetchTableOverridesFromSubscription().toMap
@@ -71,18 +71,15 @@ class SharedTableManager(serverConfig: ServerConfig) {
         PageToken.parseFrom(binary)
       } catch {
         case _: IllegalArgumentException | _: IOException =>
-          throw new DeltaSharingIllegalArgumentException(
-            "invalid 'nextPageToken'"
-          )
+          throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
       }
+
     if (
       pageToken.id.isEmpty ||
       pageToken.share != expectedShare ||
       pageToken.schema != expectedSchema
     ) {
-      throw new DeltaSharingIllegalArgumentException(
-        "invalid 'nextPageToken'"
-      )
+      throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
     }
     pageToken.getId
   }
@@ -96,9 +93,7 @@ class SharedTableManager(serverConfig: ServerConfig) {
     assertMaxResults(maxResults)
     val start = nextPageToken.map(decodePageToken(_, share, schema).toInt).getOrElse(0)
     if (start > totalSize) {
-      throw new DeltaSharingIllegalArgumentException(
-        "invalid 'nextPageToken'"
-      )
+      throw new DeltaSharingIllegalArgumentException("invalid 'nextPageToken'")
     }
     val end = start + maxResults.getOrElse(defaultMaxResults)
     val results = func(start, end)
@@ -109,10 +104,10 @@ class SharedTableManager(serverConfig: ServerConfig) {
   private def assertMaxResults(maxResults: Option[Int]): Unit = {
     maxResults.foreach { m =>
       if (m < 0 || m > defaultMaxResults) {
-        throw new DeltaSharingNoSuchElementException(
-        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
-        "please contact your share provider."
-      )
+        throw new DeltaSharingIllegalArgumentException(
+          s"Acceptable values of 'maxResults' are 0 to $defaultMaxResults, inclusive. " +
+          s"(Default: $defaultMaxResults)"
+        )
       }
     }
   }
@@ -209,9 +204,9 @@ class SharedTableManager(serverConfig: ServerConfig) {
       } catch {
         case _: DeltaSharingNoSuchElementException =>
           throw new DeltaSharingNoSuchElementException(
-          s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
-          "please contact your share provider."
-        )
+            s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
+            "please contact your share provider."
+          )
       }
     schemaConfig.getTables.asScala.find(t => caseInsensitiveComparer(t.getName, table))
       .getOrElse(throw new DeltaSharingNoSuchElementException(
