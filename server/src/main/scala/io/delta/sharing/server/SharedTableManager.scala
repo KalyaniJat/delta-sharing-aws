@@ -1,4 +1,4 @@
-// scalastyle:off headerMatch
+// scalastyle:on headerCheck
 /*
  * Copyright (2021) The Delta Lake Project Authors.
  *
@@ -109,9 +109,10 @@ class SharedTableManager(serverConfig: ServerConfig) {
   private def assertMaxResults(maxResults: Option[Int]): Unit = {
     maxResults.foreach { m =>
       if (m < 0 || m > defaultMaxResults) {
-        throw new DeltaSharingIllegalArgumentException(
-          s"Acceptable values of 'maxResults' are 0 to $defaultMaxResults, inclusive. (Default: $defaultMaxResults)"
-        )
+        throw new DeltaSharingNoSuchElementException(
+        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
+        "please contact your share provider."
+      )
       }
     }
   }
@@ -208,12 +209,14 @@ class SharedTableManager(serverConfig: ServerConfig) {
       } catch {
         case _: DeltaSharingNoSuchElementException =>
           throw new DeltaSharingNoSuchElementException(
-            s"[Share/Schema/Table] '$share/$schema/$table' does not exist, please contact your share provider."
-          )
+          s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
+          "please contact your share provider."
+        )
       }
     schemaConfig.getTables.asScala.find(t => caseInsensitiveComparer(t.getName, table))
       .getOrElse(throw new DeltaSharingNoSuchElementException(
-        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, please contact your share provider."
+        s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
+        "please contact your share provider."
       ))
   }
 }
