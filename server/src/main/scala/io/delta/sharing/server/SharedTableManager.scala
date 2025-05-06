@@ -42,14 +42,17 @@ class SharedTableManager(serverConfig: ServerConfig) {
     val shareMap = existingShares.map(s => s.getName -> s).toMap
 
     val tableOverrides = DatabaseHelper.fetchTableOverridesFromSubscription()
+    println(s"DEBUG: Loaded ${tableOverrides.size} table overrides from PostgreSQL")
 
-    // Group tables by share and schema from DB
+    // Group tables by (share, schema)
     val groupedTables = tableOverrides.groupBy { case (key, _) =>
       val Array(shareName, schemaName, _) = key.split('|')
       (shareName, schemaName)
     }
 
     groupedTables.foreach { case ((shareName, schemaName), tables) =>
+      println(s"DEBUG: Processing share=$shareName, schema=$schemaName")
+
       val shareConfigOpt = shareMap.get(shareName)
       val schemaConfigOpt = shareConfigOpt.flatMap(share =>
         share.getSchemas.asScala.find(_.getName.equalsIgnoreCase(schemaName))
@@ -60,16 +63,21 @@ class SharedTableManager(serverConfig: ServerConfig) {
 
         tables.foreach { case (key, path) =>
           val tableName = key.split('|')(2)
+          println(s"DEBUG: Injecting table from DB: $tableName with path: $path")
+
           val tableConfig = new TableConfig()
           tableConfig.setName(tableName)
           tableConfig.setLocation(path)
           schemaConfig.getTables.add(tableConfig)
         }
+      } else {
+        println(s"WARNING: Share or Schema not found in YAML for share=$shareName, schema=$schemaName — skipping tables")
       }
     }
 
     existingShares.asJava
   }
+
 
   private val defaultMaxResults = 500
 
@@ -228,6 +236,7 @@ class SharedTableManager(serverConfig: ServerConfig) {
             "please contact your share provider."
           )
       }
+
     schemaConfig.getTables.asScala.find(t => caseInsensitiveComparer(t.getName, table))
       .getOrElse(throw new DeltaSharingNoSuchElementException(
         s"[Share/Schema/Table] '$share/$schema/$table' does not exist, " +
