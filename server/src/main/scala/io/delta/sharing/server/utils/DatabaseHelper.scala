@@ -360,31 +360,30 @@ object DatabaseHelper {
 
 
   def fetchTableOverridesFromSubscription(): Seq[(String, String)] = {
-    // Returns (tableName, path)
-    var connection: Connection = null
-    var statement: PreparedStatement = null
-    var resultSet: ResultSet = null
-    val overrides = scala.collection.mutable.ListBuffer[(String, String)]()
+    val query =
+      """
+        |SELECT share_name, schema_name, product_catalog_name, path
+        |FROM dep_metadata_user_subscription
+      """.stripMargin
 
-    try {
-      connection = DriverManager.getConnection(url)
-      val query = "SELECT DISTINCT product_catalog_name, path FROM public.dep_metadata_user_subscription"
-      statement = connection.prepareStatement(query)
-      resultSet = statement.executeQuery()
+    val conn = getConnection() // ensure this opens your PostgreSQL connection
+    val stmt = conn.prepareStatement(query)
+    val rs = stmt.executeQuery()
+    val results = scala.collection.mutable.ArrayBuffer.empty[(String, String)]
 
-      while (resultSet.next()) {
-        val tableName = resultSet.getString("product_catalog_name")
-        val path = resultSet.getString("path")
-        if (tableName != null && path != null)
-          overrides += ((tableName, path))
-      }
-    } finally {
-      if (resultSet != null) resultSet.close()
-      if (statement != null) statement.close()
-      if (connection != null) connection.close()
+    while (rs.next()) {
+      val share = rs.getString("share_name")
+      val schema = rs.getString("schema_name")
+      val table = rs.getString("product_catalog_name")
+      val path = rs.getString("path")
+      val key = s"$share|$schema|$table"
+      results.append((key, path))
     }
 
-    overrides.toSeq
+    rs.close()
+    stmt.close()
+    conn.close()
+    results.toSeq
   }
 }
 

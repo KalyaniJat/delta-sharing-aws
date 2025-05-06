@@ -41,8 +41,8 @@ class SharedTableManager(serverConfig: ServerConfig) {
     serverConfig.getShares.asScala.foreach { share =>
       share.getSchemas.asScala.foreach { schema =>
         schema.getTables.asScala.foreach { table =>
-          val tableName = table.getName
-          tableOverridesFromDb.get(tableName).foreach { overriddenPath =>
+          val key = s"${share.getName}|${schema.getName}|${table.getName}"
+          tableOverridesFromDb.get(key).foreach { overriddenPath =>
             table.setLocation(overriddenPath)
           }
         }
