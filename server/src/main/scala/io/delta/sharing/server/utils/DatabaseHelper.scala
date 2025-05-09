@@ -256,7 +256,7 @@ object DatabaseHelper {
       // Define SQL Insert Query
       val query =
         if (groupName.nonEmpty) {
-          "SELECT queries_used FROM public.dep_metadata_user_group_subscription WHERE user_id = ? AND product_catalog_id = ? AND groupId= ?"
+          "SELECT queries_used FROM public.dep_metadata_user_group_subscription WHERE user_id = ? AND product_catalog_id = ? AND group_id= ?"
         } else {
           "SELECT queries_used FROM public.dep_metadata_user_subscription WHERE user_id = ? AND product_catalog_id = ?"
         }
@@ -266,6 +266,7 @@ object DatabaseHelper {
       selectStmt = connection.prepareStatement(query)
       selectStmt.setString(1, userId)
       selectStmt.setString(2, productCatalogId)
+      selectStmt.setString(3, groupId)
       resultSet = selectStmt.executeQuery()
 
       if (resultSet.next()) {
@@ -287,6 +288,7 @@ object DatabaseHelper {
         updateStmt.setInt(1, updatedQueriesUsed) // Incremented value
         updateStmt.setString(2, userId)
         updateStmt.setString(3, productCatalogId)
+        updateStmt.setString(4, groupId)
 
         // Execute UPDATE query
         val rowsUpdated = updateStmt.executeUpdate()
