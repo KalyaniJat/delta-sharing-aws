@@ -54,11 +54,12 @@ object DatabaseHelper {
       // Define SQL Insert Query
       // val query = "select user_id from dep_metadata_user_subscription where token = ?"
 
-      val query = "SELECT user_id FROM public.dep_metadata_user_subscription WHERE token = ? "
+      val query = "SELECT user_id FROM public.dep_metadata_user_subscription WHERE token = ? UNION SELECT user_id FROM public.dep_metadata_user_group_subscription WHERE token = ?"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
       preparedStatement.setString(1, token)
+      preparedStatement.setString(2, token)
       resultSet = preparedStatement.executeQuery();
 
       return resultSet.next()
@@ -170,7 +171,7 @@ object DatabaseHelper {
       connection = DriverManager.getConnection(url)
 
       // Define SQL Query
-      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from user_group_subscriptions where group_name = ? group by group_name,subscription_pricing_detail,expiration_date;"
+      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from public.dep_metadata_user_group_subscription where group_name = ? group by group_name,subscription_pricing_detail,expiration_date;"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
@@ -239,7 +240,7 @@ object DatabaseHelper {
     }
   }
 
-  def updateUserQueryAuditTable(userId: String, productCatalogId: String, productCatalogName: String, groupName: String, subscriptionPlan: String): Unit = {
+  def updateUserQueryAuditTable(userId: String, productCatalogId: String, productCatalogName: String, groupName: String, subscriptionPlan: String, groupId:String=null): Unit = {
     logger.info("Auditing started")
     var connection: Connection = null
     var selectStmt: PreparedStatement = null
@@ -255,7 +256,7 @@ object DatabaseHelper {
       // Define SQL Insert Query
       val query =
         if (groupName.nonEmpty) {
-          "SELECT queries_used FROM user_group_subscriptions WHERE user_id = ? AND product_catalog_id = ?"
+          "SELECT queries_used FROM public.dep_metadata_user_group_subscription WHERE user_id = ? AND product_catalog_id = ? AND groupId= ?"
         } else {
           "SELECT queries_used FROM public.dep_metadata_user_subscription WHERE user_id = ? AND product_catalog_id = ?"
         }
@@ -277,7 +278,7 @@ object DatabaseHelper {
         // Prepare UPDATE statement
         val updateQuery =
           if (groupName.nonEmpty) {
-            "UPDATE user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
+            "UPDATE public.dep_metadata_user_group_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ? AND groupId=?"
           } else {
             "UPDATE public.dep_metadata_user_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           }
