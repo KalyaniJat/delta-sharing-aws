@@ -401,7 +401,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         logger.info(s"Extracted UserId: $userId, GroupName: $groupName,GroupId:$groupId")
 
         //  Match token's group name with value from database using actual token
-        val query = s"SELECT DISTINCT group_name FROM public.dep_metadata_user_group_subscription WHERE user_id = '$userId' AND token = '$bearerToken' AND group_id= '$groupId'"
+        val query = s"SELECT DISTINCT group_name FROM public.dep_metadata_user_group_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken' AND group_id= '$groupId'"
         val fetchedGroupName = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
 
         if (fetchedGroupName.isEmpty) {
@@ -413,7 +413,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
           logger.error(s"Access Denied: Fetched group name ($fetchedGroupName) does not match token's group name ($groupName)")
           throw new UnauthorizedException("Forbidden: Access to this Group is not allowed")
         }
-        val query1 = s"SELECT DISTINCT subscription_plan FROM public.dep_metadata_user_group_subscription WHERE user_id = '$userId' AND token = '$bearerToken' AND group_id= '$groupId'"
+        val query1 = s"SELECT DISTINCT subscription_plan FROM public.dep_metadata_user_group_subscriptions WHERE user_id = '$userId' AND token = '$bearerToken' AND group_id= '$groupId'"
         subscriptionPlan = DatabaseHelper.executeQuery(query1).headOption.getOrElse("")
       }
 
@@ -424,7 +424,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
 
       if (groupName.nonEmpty) {
         // Use actual token in the query
-        val catalogQuery = s"SELECT DISTINCT product_catalog_id FROM public.dep_metadata_user_group_subscription WHERE product_catalog_name = '$catalogName' AND token = '$bearerToken' AND group_id= '$groupId'"
+        val catalogQuery = s"SELECT DISTINCT product_catalog_id FROM public.dep_metadata_user_group_subscriptions WHERE product_catalog_name = '$catalogName' AND token = '$bearerToken' AND group_id= '$groupId'"
         productCatalogId = DatabaseHelper.executeQuery(catalogQuery).headOption.getOrElse("")
         productCatalogName = catalogName
 

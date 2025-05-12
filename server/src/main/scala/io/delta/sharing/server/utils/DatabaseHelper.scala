@@ -54,7 +54,7 @@ object DatabaseHelper {
       // Define SQL Insert Query
       // val query = "select user_id from dep_metadata_user_subscription where token = ?"
 
-      val query = "SELECT user_id FROM public.dep_metadata_user_subscription WHERE token = ? UNION SELECT user_id FROM public.dep_metadata_user_group_subscription WHERE token = ?"
+      val query = "SELECT user_id FROM public.dep_metadata_user_subscription WHERE token = ? UNION SELECT user_id FROM public.dep_metadata_user_group_subscriptions WHERE token = ?"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
@@ -171,7 +171,7 @@ object DatabaseHelper {
       connection = DriverManager.getConnection(url)
 
       // Define SQL Query
-      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from public.dep_metadata_user_group_subscription where group_name = ? group by group_name,subscription_pricing_detail,expiration_date;"
+      val query = "select subscription_plan,group_name,subscription_pricing_detail,expiration_date,  SUM(queries_used) as totalCount from public.dep_metadata_user_group_subscriptions where group_name = ? group by group_name,subscription_pricing_detail,expiration_date;"
 
       // Prepare and execute statement
       preparedStatement = connection.prepareStatement(query)
@@ -256,7 +256,7 @@ object DatabaseHelper {
       // Define SQL Insert Query
       val query =
         if (groupName.nonEmpty) {
-          "SELECT queries_used FROM public.dep_metadata_user_group_subscription WHERE user_id = ? AND product_catalog_id = ? AND group_id= ?"
+          "SELECT queries_used FROM public.dep_metadata_user_group_subscriptions WHERE user_id = ? AND product_catalog_id = ? AND group_id= ?"
         } else {
           "SELECT queries_used FROM public.dep_metadata_user_subscription WHERE user_id = ? AND product_catalog_id = ?"
         }
@@ -279,7 +279,7 @@ object DatabaseHelper {
         // Prepare UPDATE statement
         val updateQuery =
           if (groupName.nonEmpty) {
-            "UPDATE public.dep_metadata_user_group_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ? AND groupId=?"
+            "UPDATE public.dep_metadata_user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ? AND groupId=?"
           } else {
             "UPDATE public.dep_metadata_user_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           }
