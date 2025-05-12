@@ -393,9 +393,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         val query = s"SELECT subscription_plan FROM public.dep_metadata_user_subscription WHERE user_id = '$userId' AND token = '$bearerToken'"
         subscriptionPlan = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
       } else if (tokenParts.length == 4) {
+        logger.info(s"**************token*******************"$bearerToken)
         // Extract groupName if token length is 2
         groupName = tokenParts(3)
-        groupId=tokenParts(1)
+        groupId=tokenParts(2)
         logger.info(s"Extracted UserId: $userId, GroupName: $groupName,GroupId:$groupId")
 
         //  Match token's group name with value from database using actual token
