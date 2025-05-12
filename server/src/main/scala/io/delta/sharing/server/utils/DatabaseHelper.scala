@@ -278,7 +278,7 @@ object DatabaseHelper {
         // Prepare UPDATE statement
         val updateQuery =
           if (groupName.nonEmpty) {
-            "UPDATE public.dep_metadata_user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ? AND groupId=?"
+            "UPDATE public.dep_metadata_user_group_subscriptions SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ? AND group_id=?"
           } else {
             "UPDATE public.dep_metadata_user_subscription SET queries_used = ? WHERE user_id = ? AND product_catalog_id = ?"
           }
