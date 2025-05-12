@@ -358,6 +358,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
     val result: Boolean = DatabaseHelper.checkTokenPresentInDb(bearerToken)
 
     var groupName: String = ""
+    var groupId: String= ""
     var productCatalogId: String = ""
     var productCatalogName: String = ""
     var userId:String=""
@@ -373,7 +374,7 @@ class DeltaSharingService(serverConfig: ServerConfig) {
       }
 
       val tokenParts = decodedToken.split(":")
-      if (tokenParts.length != 2 && tokenParts.length != 3) {
+      if (tokenParts.length != 4 && tokenParts.length != 3) {
         throw new UnauthorizedException("Malformed Bearer Token")
       }
 
@@ -393,10 +394,10 @@ class DeltaSharingService(serverConfig: ServerConfig) {
         val query = s"SELECT subscription_plan FROM public.dep_metadata_user_subscription WHERE user_id = '$userId' AND token = '$bearerToken'"
         subscriptionPlan = DatabaseHelper.executeQuery(query).headOption.getOrElse("")
       } else if (tokenParts.length == 4) {
-        logger.info(s"**************token*******************"$bearerToken)
+        logger.info(s"**************token******************* $bearerToken")
         // Extract groupName if token length is 2
         groupName = tokenParts(3)
-        groupId=tokenParts(2)
+        groupId=tokenParts(1)
         logger.info(s"Extracted UserId: $userId, GroupName: $groupName,GroupId:$groupId")
 
         //  Match token's group name with value from database using actual token
